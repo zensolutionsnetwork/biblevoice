@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Read the Bible — BibleVoice</title>
+<meta name="description" content="Read the whole Bible online, beginning to end, free — with audio and an easy index. 66 books (Berean Standard Bible) plus the Apocrypha / deuterocanon (KJV)." />
+<style>
+  :root{ --bg:#f7f1e3; --panel:#ffffff; --panel2:#f2ebd8; --ink:#2d2920; --mut:#8a7f62; --gold:#b3852a; --line:#e8dfc8; --side:286px; }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Georgia,'Times New Roman',serif;background:radial-gradient(150% 120% at 50% 2%, #fffaf0 0%, #f6eccf 50%, #ecd9a6 100%);color:var(--ink)}
+  a{color:inherit}
+  header{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:10px;padding:11px 14px;background:#fbf5e8;border-bottom:1px solid var(--line)}
+  header .brand{font-size:18px;text-decoration:none}.brand b{color:var(--gold)}
+  header button,header a.btn{font-family:system-ui,sans-serif;font-size:13px;background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:9px;padding:8px 11px;cursor:pointer;text-decoration:none}
+  #menuBtn{display:none}
+  header .spacer{flex:1}
+  #ref{font-size:15px;color:var(--gold);font-family:system-ui,sans-serif}
+  .wrap{display:flex;align-items:flex-start;position:relative;z-index:1}
+  /* sidebar / index */
+  #side{width:var(--side);flex:none;position:sticky;top:53px;height:calc(100vh - 53px);overflow:auto;background:var(--panel);border-right:1px solid var(--line);padding:10px}
+  #side h3{font-family:system-ui,sans-serif;color:var(--mut);font-size:11px;letter-spacing:1.6px;text-transform:uppercase;margin:14px 8px 6px}
+  .book{display:block;width:100%;text-align:left;background:none;border:0;color:var(--ink);font-family:system-ui,sans-serif;font-size:14.5px;padding:8px;border-radius:8px;cursor:pointer}
+  .book:hover{background:var(--panel2)}
+  .book.active{background:var(--panel2);color:var(--gold)}
+  .chaps{display:none;flex-wrap:wrap;gap:5px;padding:4px 8px 8px}
+  .chaps.open{display:flex}
+  .chip{font-family:system-ui,sans-serif;font-size:12.5px;min-width:30px;text-align:center;background:#ffffff;border:1px solid var(--line);color:var(--ink);border-radius:6px;padding:5px 0;cursor:pointer}
+  .chip:hover{border-color:var(--gold)}
+  .chip.active{background:var(--gold);color:#1a1406;border-color:var(--gold)}
+  /* reading area */
+  main{flex:1;min-width:0;max-width:740px;margin:0 auto;padding:24px 22px 96px}
+  h1.title{font-size:30px;margin:4px 0 2px}
+  .sub{color:var(--mut);font-size:14px;font-family:system-ui,sans-serif;margin-bottom:16px}
+  .heading{color:var(--gold);font-size:20px;margin:22px 0 6px}
+  .v{line-height:1.95;font-size:19px}
+  .vn{font-size:12px;color:var(--gold);vertical-align:super;margin-right:3px;font-family:system-ui,sans-serif;cursor:pointer;padding:0 2px;border-radius:4px}
+  .vn:hover{background:var(--panel2);outline:1px solid var(--line)}
+  #toast{position:fixed;left:50%;bottom:74px;transform:translateX(-50%) translateY(20px);background:#2d2920;color:#fffdf6;font-family:system-ui,sans-serif;font-size:13.5px;padding:9px 16px;border-radius:999px;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:80;max-width:88vw;text-align:center}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  audio{width:100%;margin:12px 0 6px}
+  .loading{color:var(--mut);text-align:center;padding:40px;font-family:system-ui,sans-serif}
+  .nav{position:fixed;bottom:0;left:var(--side);right:0;display:flex;gap:10px;justify-content:center;padding:11px 16px;background:#fbf5e8;border-top:1px solid var(--line)}
+  .nav button{flex:1;max-width:240px;font-family:system-ui,sans-serif;font-size:15px;background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:11px;cursor:pointer}
+  .nav button:disabled{opacity:.4;cursor:default}
+  #scrim{display:none}
+  @media (max-width:880px){
+    #menuBtn{display:inline-block}
+    #side{position:fixed;left:0;top:0;height:100%;z-index:60;transform:translateX(-100%);transition:transform .2s;padding-top:14px}
+    #side.open{transform:none}
+    #scrim.show{display:block;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:50}
+    .nav{left:0}
+  }
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas><div id="glow"></div><div id="rays"></div>
+<style>
+#bg{position:fixed;inset:0;z-index:0;pointer-events:none}
+#glow{position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(760px 640px at 50% -5%, rgba(255,248,222,.5), rgba(255,234,176,.26) 32%, rgba(242,206,120,.1) 52%, transparent 64%);animation:bvpulse 8s ease-in-out infinite}
+#rays{position:fixed;left:50%;top:0;width:215vmax;height:215vmax;transform:translate(-50%,-50%);z-index:0;pointer-events:none;background:repeating-conic-gradient(from 0deg at 50% 50%, rgba(216,170,78,0) 0deg, rgba(216,170,78,0) 2.5deg, rgba(216,170,78,.09) 3.5deg, rgba(216,170,78,0) 4.6deg, rgba(216,170,78,0) 7.5deg);-webkit-mask-image:radial-gradient(closest-side, #000 0%, rgba(0,0,0,.8) 14%, rgba(0,0,0,.3) 42%, transparent 68%);mask-image:radial-gradient(closest-side, #000 0%, rgba(0,0,0,.8) 14%, rgba(0,0,0,.3) 42%, transparent 68%);animation:rayspin 150s linear infinite}
+@keyframes bvpulse{0%,100%{opacity:.8;transform:scale(1)}50%{opacity:.95;transform:scale(1.03)}}
+@keyframes rayspin{to{transform:translate(-50%,-50%) rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){#glow{animation:none}#rays{animation:none}}
+</style>
+<script>
+(function(){var c=document.getElementById('bg'),x=c.getContext('2d'),w,h,P=[];var R=matchMedia('(prefers-reduced-motion:reduce)').matches;
+function mk(){return{x:Math.random()*w,y:h+Math.random()*h,r:Math.random()*1.4+0.4,s:Math.random()*0.18+0.04,a:Math.random()*0.22+0.05,t:Math.random()*1000}}
+function init(){w=c.width=innerWidth;h=c.height=innerHeight;P=Array.from({length:Math.max(12,Math.min(34,Math.floor(w/40)))},mk)}
+function draw(){x.clearRect(0,0,w,h);for(var i=0;i<P.length;i++){var p=P[i];p.y-=p.s;p.x+=Math.sin((p.y+p.t)/140)*0.1;if(p.y<-12){p=mk();p.y=h+12;P[i]=p;}var g=x.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*5);g.addColorStop(0,'rgba(208,160,70,'+p.a+')');g.addColorStop(1,'rgba(208,160,70,0)');x.fillStyle=g;x.beginPath();x.arc(p.x,p.y,p.r*5,0,6.283);x.fill();}requestAnimationFrame(draw);}
+addEventListener('resize',init);init();if(!R)draw();})();
+</script>
+<header>
+  <button id="menuBtn">☰ Books</button>
+  <a class="brand" href="/">Bible<b>Voice</b></a>
+  <span class="spacer"></span>
+  <span id="ref"></span>
+  <span class="spacer"></span>
+  <select id="langSel" title="Bible language" style="font-family:system-ui,sans-serif;font-size:13px;background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:9px;padding:8px 6px;cursor:pointer">
+    <option value="en">EN</option>
+    <option value="fr">FR</option>
+    <option value="es">ES</option>
+  </select>
+  <button id="rndBtn" title="Open a random passage">🎲 <span class="tRandom">Random</span></button>
+  <button id="shareBtn" title="Share this chapter">↗ <span class="tShare">Share</span></button>
+  <a class="btn" href="/">💬 <span class="tAsk">Ask the AI</span></a>
+</header>
+<div id="toast"></div>
+
+<div class="wrap">
+  <aside id="side"></aside>
+  <main><div id="content"><div class="loading">Loading the Word…</div></div></main>
+</div>
+<div id="scrim"></div>
+
+<div class="nav">
+  <button id="prev">‹ Previous</button>
+  <button id="next">Next ›</button>
+</div>
+
+<script>
+let BOOKS=[]; let cur={book:null,chapter:1};
+const LANGS=['en','fr','es'];
+const T={
+  en:{ot:'Old Testament',nt:'New Testament',ap:'Apocrypha · Deuterocanon',chapter:'Chapter',loading:'Loading the Word…',loading2:'Loading…',fail:'Could not load this chapter.',prev:'‹ Previous',next:'Next ›',books:'☰ Books',random:'Random',share:'Share',ask:'Ask the AI',copied:'Copied to clipboard 🕊️',readOn:'Read free on BibleVoice'},
+  fr:{ot:'Ancien Testament',nt:'Nouveau Testament',ap:'Apocryphes · Deutérocanon',chapter:'Chapitre',loading:'Chargement de la Parole…',loading2:'Chargement…',fail:'Impossible de charger ce chapitre.',prev:'‹ Précédent',next:'Suivant ›',books:'☰ Livres',random:'Au hasard',share:'Partager',ask:'Parler à l’IA',copied:'Copié 🕊️',readOn:'À lire gratuitement sur BibleVoice'},
+  es:{ot:'Antiguo Testamento',nt:'Nuevo Testamento',ap:'Apócrifos · Deuterocanon',chapter:'Capítulo',loading:'Cargando la Palabra…',loading2:'Cargando…',fail:'No se pudo cargar este capítulo.',prev:'‹ Anterior',next:'Siguiente ›',books:'☰ Libros',random:'Al azar',share:'Compartir',ask:'Habla con la IA',copied:'Copiado 🕊️',readOn:'Lee gratis en BibleVoice'}
+};
+let LANG='en';
+const tr=()=>T[LANG]||T.en;
+const $=s=>document.querySelector(s);
+const side=$('#side'), content=$('#content'), refEl=$('#ref'), scrim=$('#scrim');
+const idxOf=id=>BOOKS.findIndex(b=>b.id===id);
+const isMobile=()=>matchMedia('(max-width:880px)').matches;
+
+function applyLabels(){
+  const t=tr();
+  $('#menuBtn').textContent=t.books;
+  document.querySelector('.tRandom').textContent=t.random;
+  document.querySelector('.tShare').textContent=t.share;
+  document.querySelector('.tAsk').textContent=t.ask;
+  $('#prev').textContent=t.prev; $('#next').textContent=t.next;
+  $('#langSel').value=LANG;
+}
+
+async function loadCanon(){
+  const j=await (await fetch('/api/canon?lang='+LANG)).json();
+  BOOKS=(j.books||[]).slice().sort((a,b)=>a.order-b.order);
+  buildIndex();
+}
+
+async function init(){
+  // language: deep link ?l=  ->  saved  ->  en
+  const p=new URLSearchParams(location.search);
+  const pl=(p.get('l')||'').toLowerCase();
+  const savedLang=localStorage.getItem('bv_lang')||'';
+  LANG=LANGS.includes(pl)?pl:(LANGS.includes(savedLang)?savedLang:'en');
+  applyLabels();
+  await loadCanon();
+  // deep link ?b=&c=  ->  saved  ->  first book
+  const pb=(p.get('b')||'').toUpperCase(), pc=parseInt(p.get('c')||'',10);
+  const saved=JSON.parse(localStorage.getItem('bv_read')||'null');
+  if(pb && idxOf(pb)>=0){ cur={book:pb,chapter:pc>0?pc:1}; }
+  else if(saved && idxOf(saved.book)>=0){ cur=saved; }
+  else { cur={book:BOOKS[0].id,chapter:1}; }
+  load();
+}
+
+$('#langSel').onchange=async()=>{
+  LANG=$('#langSel').value;
+  localStorage.setItem('bv_lang',LANG);
+  applyLabels();
+  await loadCanon();
+  if(idxOf(cur.book)<0) cur={book:BOOKS[0].id,chapter:1}; // e.g. Apocrypha book not in FR/ES sets
+  load();
+};
+
+function buildIndex(){
+  const t=tr();
+  const ot=BOOKS.filter(b=>b.testament==='OT'), nt=BOOKS.filter(b=>b.testament==='NT'), ap=BOOKS.filter(b=>b.testament==='AP');
+  const sect=(ti,arr)=>arr.length?`<h3>${ti}</h3>`+arr.map(b=>{
+    const chips=Array.from({length:b.numberOfChapters},(_,i)=>`<div class="chip" data-b="${b.id}" data-c="${i+1}">${i+1}</div>`).join('');
+    return `<button class="book" data-book="${b.id}">${b.name}</button><div class="chaps" id="ch_${b.id}">${chips}</div>`;
+  }).join(''):'';
+  side.innerHTML=sect(t.ot,ot)+sect(t.nt,nt)+sect(t.ap,ap);
+  side.querySelectorAll('.book').forEach(el=>el.onclick=()=>toggleBook(el.dataset.book));
+  side.querySelectorAll('.chip').forEach(el=>el.onclick=()=>{ cur={book:el.dataset.b,chapter:+el.dataset.c}; if(isMobile())closeSide(); load(); });
+}
+function toggleBook(id){
+  const c=$('#ch_'+id), open=c.classList.contains('open');
+  side.querySelectorAll('.chaps').forEach(x=>x.classList.remove('open'));
+  if(!open) c.classList.add('open');
+}
+function highlightIndex(){
+  side.querySelectorAll('.book').forEach(b=>b.classList.toggle('active',b.dataset.book===cur.book));
+  side.querySelectorAll('.chaps').forEach(x=>x.classList.remove('open'));
+  const c=$('#ch_'+cur.book); if(c){ c.classList.add('open');
+    c.querySelectorAll('.chip').forEach(ch=>ch.classList.toggle('active',+ch.dataset.c===cur.chapter)); }
+  const ab=side.querySelector('.book.active'); if(ab) ab.scrollIntoView({block:'center'});
+}
+
+async function load(){
+  content.innerHTML=`<div class="loading">${tr().loading2}</div>`; window.scrollTo(0,0);
+  const r=await fetch(`/api/bible/${cur.book}/${cur.chapter}?lang=${LANG}`);
+  if(!r.ok){ content.innerHTML=`<div class="loading">${tr().fail}</div>`; return; }
+  const ch=await r.json();
+  localStorage.setItem('bv_read',JSON.stringify(cur));
+  history.replaceState(null,'',`/read?b=${cur.book}&c=${cur.chapter}${LANG==='en'?'':'&l='+LANG}`);
+  refEl.textContent=`${ch.book.name} ${ch.number}`;
+  document.title=`${ch.book.name} ${ch.number} — BibleVoice`;
+  let audioHtml=''; if(ch.audio){ const url=Object.values(ch.audio)[0]; if(url) audioHtml=`<audio controls preload="none" src="${url}"></audio>`; }
+  const heads={}; (ch.headings||[]).forEach(h=>heads[h.before]=h.text);
+  let body=''; ch.verses.forEach((v,i)=>{ if(heads[i+1]) body+=`<div class="heading">${heads[i+1]}</div>`; body+=`<span class="v"><span class="vn" data-v="${v.number}" title="${tr().share}">${v.number}</span>${v.text} </span>`; });
+  content.innerHTML=`<h1 class="title">${ch.book.name}</h1><div class="sub">${tr().chapter} ${ch.number} · ${ch.translation?ch.translation.name:'Berean Standard Bible'}</div>${audioHtml}<div>${body}</div>`;
+  CUR_CH=ch;
+  content.querySelectorAll('.vn').forEach(el=>el.onclick=()=>shareVerse(+el.dataset.v));
+  highlightIndex(); updateNav();
+}
+
+// --- One-tap sharing (chapter via header button, verse via its number) ---
+let CUR_CH=null;
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),2200); }
+function chapterLink(){ return `${location.origin}/read?b=${encodeURIComponent(cur.book)}&c=${cur.chapter}${LANG==='en'?'':'&l='+LANG}`; }
+async function doShare(title,text,url){
+  if(navigator.share){ try{ await navigator.share({title,text,url}); return; }catch(e){ if(e && e.name==='AbortError') return; } }
+  try{ await navigator.clipboard.writeText(text?`${text}\n${url}`:url); toast(tr().copied); }
+  catch(e){ toast(url); }
+}
+$('#shareBtn').onclick=()=>{ if(!CUR_CH) return;
+  doShare(`${CUR_CH.book.name} ${CUR_CH.number} — BibleVoice`, `${CUR_CH.book.name} ${CUR_CH.number} — ${tr().readOn}`, chapterLink()); };
+function shareVerse(n){ if(!CUR_CH) return;
+  const v=(CUR_CH.verses||[]).find(x=>x.number===n); if(!v) return;
+  const ref=`${CUR_CH.book.name} ${CUR_CH.number}:${n}`;
+  doShare(`${ref} — BibleVoice`, `“${v.text.trim()}” — ${ref}`, chapterLink()); }
+
+function neighbor(d){
+  const bi=idxOf(cur.book), b=BOOKS[bi];
+  if(d>0){ if(cur.chapter<b.numberOfChapters) return {book:b.id,chapter:cur.chapter+1};
+    if(bi<BOOKS.length-1) return {book:BOOKS[bi+1].id,chapter:1}; return null; }
+  if(cur.chapter>1) return {book:b.id,chapter:cur.chapter-1};
+  if(bi>0){ const p=BOOKS[bi-1]; return {book:p.id,chapter:p.numberOfChapters}; } return null;
+}
+function updateNav(){ $('#prev').disabled=!neighbor(-1); $('#next').disabled=!neighbor(1); }
+$('#prev').onclick=()=>{ const n=neighbor(-1); if(n){cur=n;load();} };
+$('#next').onclick=()=>{ const n=neighbor(1); if(n){cur=n;load();} };
+$('#rndBtn').onclick=async()=>{ const j=await (await fetch('/api/random')).json(); cur={book:j.bookId,chapter:j.chapter}; load(); };
+
+function openSide(){ side.classList.add('open'); scrim.classList.add('show'); }
+function closeSide(){ side.classList.remove('open'); scrim.classList.remove('show'); }
+$('#menuBtn').onclick=openSide; scrim.onclick=closeSide;
+document.addEventListener('keydown',e=>{ if(e.key==='ArrowRight'&&!$('#next').disabled)$('#next').click(); if(e.key==='ArrowLeft'&&!$('#prev').disabled)$('#prev').click(); });
+
+init();
+</script>
+</body>
+</html>

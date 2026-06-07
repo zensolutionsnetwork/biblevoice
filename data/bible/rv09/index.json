@@ -1,0 +1,605 @@
+{
+  "translation": "RV09",
+  "translationName": "Reina Valera 1909",
+  "language": "es",
+  "license": "Public Domain",
+  "source": "https://bible.helloao.org",
+  "canonGroup": "protocanon",
+  "bookCount": 66,
+  "books": [
+    {
+      "id": "GEN",
+      "name": "Génesis",
+      "order": 1,
+      "testament": "OT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 50,
+      "totalNumberOfVerses": 1533
+    },
+    {
+      "id": "EXO",
+      "name": "Éxodo",
+      "order": 2,
+      "testament": "OT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 40,
+      "totalNumberOfVerses": 1213
+    },
+    {
+      "id": "LEV",
+      "name": "Levítico",
+      "order": 3,
+      "testament": "OT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 27,
+      "totalNumberOfVerses": 859
+    },
+    {
+      "id": "NUM",
+      "name": "Números",
+      "order": 4,
+      "testament": "OT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 36,
+      "totalNumberOfVerses": 1286
+    },
+    {
+      "id": "DEU",
+      "name": "Deuteronomio",
+      "order": 5,
+      "testament": "OT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 34,
+      "totalNumberOfVerses": 959
+    },
+    {
+      "id": "JOS",
+      "name": "Josué",
+      "order": 6,
+      "testament": "OT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 24,
+      "totalNumberOfVerses": 658
+    },
+    {
+      "id": "JDG",
+      "name": "Jueces",
+      "order": 7,
+      "testament": "OT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 21,
+      "totalNumberOfVerses": 618
+    },
+    {
+      "id": "RUT",
+      "name": "Rut",
+      "order": 8,
+      "testament": "OT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 4,
+      "totalNumberOfVerses": 85
+    },
+    {
+      "id": "1SA",
+      "name": "1 Samuel",
+      "order": 9,
+      "testament": "OT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 31,
+      "totalNumberOfVerses": 809
+    },
+    {
+      "id": "2SA",
+      "name": "2 Samuel",
+      "order": 10,
+      "testament": "OT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 24,
+      "totalNumberOfVerses": 694
+    },
+    {
+      "id": "1KI",
+      "name": "1 Reyes",
+      "order": 11,
+      "testament": "OT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 22,
+      "totalNumberOfVerses": 816
+    },
+    {
+      "id": "2KI",
+      "name": "2 Reyes",
+      "order": 12,
+      "testament": "OT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 25,
+      "totalNumberOfVerses": 719
+    },
+    {
+      "id": "1CH",
+      "name": "1 Crónicas",
+      "order": 13,
+      "testament": "OT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 29,
+      "totalNumberOfVerses": 942
+    },
+    {
+      "id": "2CH",
+      "name": "2 Crónicas",
+      "order": 14,
+      "testament": "OT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 36,
+      "totalNumberOfVerses": 821
+    },
+    {
+      "id": "EZR",
+      "name": "Esdras",
+      "order": 15,
+      "testament": "OT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 10,
+      "totalNumberOfVerses": 280
+    },
+    {
+      "id": "NEH",
+      "name": "Nehemías",
+      "order": 16,
+      "testament": "OT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 13,
+      "totalNumberOfVerses": 406
+    },
+    {
+      "id": "EST",
+      "name": "Ester",
+      "order": 17,
+      "testament": "OT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 10,
+      "totalNumberOfVerses": 167
+    },
+    {
+      "id": "JOB",
+      "name": "Job",
+      "order": 18,
+      "testament": "OT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 42,
+      "totalNumberOfVerses": 1061
+    },
+    {
+      "id": "PSA",
+      "name": "Salmos",
+      "order": 19,
+      "testament": "OT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 150,
+      "totalNumberOfVerses": 2461
+    },
+    {
+      "id": "PRO",
+      "name": "Proverbios",
+      "order": 20,
+      "testament": "OT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 31,
+      "totalNumberOfVerses": 915
+    },
+    {
+      "id": "ECC",
+      "name": "Eclesiastés",
+      "order": 21,
+      "testament": "OT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 12,
+      "totalNumberOfVerses": 222
+    },
+    {
+      "id": "SNG",
+      "name": "Cantar de los Cantares",
+      "order": 22,
+      "testament": "OT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 8,
+      "totalNumberOfVerses": 117
+    },
+    {
+      "id": "ISA",
+      "name": "Isaías",
+      "order": 23,
+      "testament": "OT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 66,
+      "totalNumberOfVerses": 1292
+    },
+    {
+      "id": "JER",
+      "name": "Jeremías",
+      "order": 24,
+      "testament": "OT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 52,
+      "totalNumberOfVerses": 1364
+    },
+    {
+      "id": "LAM",
+      "name": "Lamentaciones",
+      "order": 25,
+      "testament": "OT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 5,
+      "totalNumberOfVerses": 154
+    },
+    {
+      "id": "EZK",
+      "name": "Ezequiel",
+      "order": 26,
+      "testament": "OT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 48,
+      "totalNumberOfVerses": 1273
+    },
+    {
+      "id": "DAN",
+      "name": "Daniel",
+      "order": 27,
+      "testament": "OT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 12,
+      "totalNumberOfVerses": 357
+    },
+    {
+      "id": "HOS",
+      "name": "Oseas",
+      "order": 28,
+      "testament": "OT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 14,
+      "totalNumberOfVerses": 196
+    },
+    {
+      "id": "JOL",
+      "name": "Joel",
+      "order": 29,
+      "testament": "OT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 3,
+      "totalNumberOfVerses": 73
+    },
+    {
+      "id": "AMO",
+      "name": "Amós",
+      "order": 30,
+      "testament": "OT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 9,
+      "totalNumberOfVerses": 146
+    },
+    {
+      "id": "OBA",
+      "name": "Abdías",
+      "order": 31,
+      "testament": "OT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 1,
+      "totalNumberOfVerses": 21
+    },
+    {
+      "id": "JON",
+      "name": "Jonás",
+      "order": 32,
+      "testament": "OT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 4,
+      "totalNumberOfVerses": 47
+    },
+    {
+      "id": "MIC",
+      "name": "Miqueas",
+      "order": 33,
+      "testament": "OT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 7,
+      "totalNumberOfVerses": 105
+    },
+    {
+      "id": "NAM",
+      "name": "Nahum",
+      "order": 34,
+      "testament": "OT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 3,
+      "totalNumberOfVerses": 47
+    },
+    {
+      "id": "HAB",
+      "name": "Habacuc",
+      "order": 35,
+      "testament": "OT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 3,
+      "totalNumberOfVerses": 56
+    },
+    {
+      "id": "ZEP",
+      "name": "Sofonías",
+      "order": 36,
+      "testament": "OT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 3,
+      "totalNumberOfVerses": 53
+    },
+    {
+      "id": "HAG",
+      "name": "Hageo",
+      "order": 37,
+      "testament": "OT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 2,
+      "totalNumberOfVerses": 38
+    },
+    {
+      "id": "ZEC",
+      "name": "Zacarías",
+      "order": 38,
+      "testament": "OT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 14,
+      "totalNumberOfVerses": 211
+    },
+    {
+      "id": "MAL",
+      "name": "Malaquías",
+      "order": 39,
+      "testament": "OT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 4,
+      "totalNumberOfVerses": 55
+    },
+    {
+      "id": "MAT",
+      "name": "San Mateo",
+      "order": 40,
+      "testament": "NT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 28,
+      "totalNumberOfVerses": 1071
+    },
+    {
+      "id": "MRK",
+      "name": "Marcos",
+      "order": 41,
+      "testament": "NT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 16,
+      "totalNumberOfVerses": 678
+    },
+    {
+      "id": "LUK",
+      "name": "San Lucas",
+      "order": 42,
+      "testament": "NT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 24,
+      "totalNumberOfVerses": 1151
+    },
+    {
+      "id": "JHN",
+      "name": "Juan",
+      "order": 43,
+      "testament": "NT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 21,
+      "totalNumberOfVerses": 879
+    },
+    {
+      "id": "ACT",
+      "name": "Hechos",
+      "order": 44,
+      "testament": "NT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 28,
+      "totalNumberOfVerses": 1006
+    },
+    {
+      "id": "ROM",
+      "name": "Romanos",
+      "order": 45,
+      "testament": "NT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 16,
+      "totalNumberOfVerses": 433
+    },
+    {
+      "id": "1CO",
+      "name": "1 Corintios",
+      "order": 46,
+      "testament": "NT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 16,
+      "totalNumberOfVerses": 437
+    },
+    {
+      "id": "2CO",
+      "name": "2 Corintios",
+      "order": 47,
+      "testament": "NT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 13,
+      "totalNumberOfVerses": 256
+    },
+    {
+      "id": "GAL",
+      "name": "Gálatas",
+      "order": 48,
+      "testament": "NT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 6,
+      "totalNumberOfVerses": 149
+    },
+    {
+      "id": "EPH",
+      "name": "Efesios",
+      "order": 49,
+      "testament": "NT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 6,
+      "totalNumberOfVerses": 155
+    },
+    {
+      "id": "PHP",
+      "name": "Filipenses",
+      "order": 50,
+      "testament": "NT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 4,
+      "totalNumberOfVerses": 104
+    },
+    {
+      "id": "COL",
+      "name": "Colosenses",
+      "order": 51,
+      "testament": "NT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 4,
+      "totalNumberOfVerses": 95
+    },
+    {
+      "id": "1TH",
+      "name": "1 Tesalonicenses",
+      "order": 52,
+      "testament": "NT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 5,
+      "totalNumberOfVerses": 89
+    },
+    {
+      "id": "2TH",
+      "name": "2 Tesalonicenses",
+      "order": 53,
+      "testament": "NT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 3,
+      "totalNumberOfVerses": 47
+    },
+    {
+      "id": "1TI",
+      "name": "1 Timoteo",
+      "order": 54,
+      "testament": "NT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 6,
+      "totalNumberOfVerses": 113
+    },
+    {
+      "id": "2TI",
+      "name": "2 Timoteo",
+      "order": 55,
+      "testament": "NT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 4,
+      "totalNumberOfVerses": 83
+    },
+    {
+      "id": "TIT",
+      "name": "Tito",
+      "order": 56,
+      "testament": "NT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 3,
+      "totalNumberOfVerses": 46
+    },
+    {
+      "id": "PHM",
+      "name": "Filemón",
+      "order": 57,
+      "testament": "NT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 1,
+      "totalNumberOfVerses": 25
+    },
+    {
+      "id": "HEB",
+      "name": "Hebreos",
+      "order": 58,
+      "testament": "NT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 13,
+      "totalNumberOfVerses": 303
+    },
+    {
+      "id": "JAS",
+      "name": "Santiago",
+      "order": 59,
+      "testament": "NT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 5,
+      "totalNumberOfVerses": 108
+    },
+    {
+      "id": "1PE",
+      "name": "1 Pedro",
+      "order": 60,
+      "testament": "NT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 5,
+      "totalNumberOfVerses": 105
+    },
+    {
+      "id": "2PE",
+      "name": "2 Pedro",
+      "order": 61,
+      "testament": "NT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 3,
+      "totalNumberOfVerses": 61
+    },
+    {
+      "id": "1JN",
+      "name": "1 Juan",
+      "order": 62,
+      "testament": "NT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 5,
+      "totalNumberOfVerses": 105
+    },
+    {
+      "id": "2JN",
+      "name": "2 Juan",
+      "order": 63,
+      "testament": "NT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 1,
+      "totalNumberOfVerses": 13
+    },
+    {
+      "id": "3JN",
+      "name": "3 Juan",
+      "order": 64,
+      "testament": "NT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 1,
+      "totalNumberOfVerses": 14
+    },
+    {
+      "id": "JUD",
+      "name": "Judas",
+      "order": 65,
+      "testament": "NT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 1,
+      "totalNumberOfVerses": 25
+    },
+    {
+      "id": "REV",
+      "name": "Apocalipsis",
+      "order": 66,
+      "testament": "NT",
+      "canonGroup": "protocanon",
+      "numberOfChapters": 22,
+      "totalNumberOfVerses": 404
+    }
+  ]
+}

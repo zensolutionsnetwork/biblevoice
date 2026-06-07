@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>BibleVoice — Super-admin</title>
+<meta name="robots" content="noindex,nofollow" />
+<style>
+  :root{ --bg:#f7f1e3; --panel:#ffffff; --panel2:#f2ebd8; --ink:#2d2920; --mut:#8a7f62; --gold:#b3852a; --line:#e8dfc8; }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Georgia,'Times New Roman',serif;background:radial-gradient(140% 130% at 50% 4%, #fffaf0 0%, #f6eccf 46%, #ead69e 100%);color:var(--ink);min-height:100vh}
+  .wrap{max-width:980px;margin:0 auto;padding:4vh 20px 24px;min-height:100vh;display:flex;flex-direction:column}
+  header{text-align:center;margin:10px 0 18px}
+  .logo{font-size:26px}
+  .logo b{color:var(--gold)}
+  .sub{color:var(--mut);font-size:13px;font-family:system-ui,sans-serif;margin-top:4px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:14px}
+  .row{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+  .k{color:var(--gold);font-size:12px;letter-spacing:1.5px;text-transform:uppercase;font-family:system-ui,sans-serif}
+  .meta{color:var(--mut);font-size:12px;font-family:system-ui,sans-serif}
+  textarea{width:100%;min-height:56vh;background:#fffdf6;border:1px solid var(--line);border-radius:10px;color:var(--ink);padding:14px;font:13px/1.6 ui-monospace,Consolas,monospace;resize:vertical}
+  textarea:disabled{opacity:.7}
+  button.gold{background:var(--gold);color:#1a1406;font-weight:700;border:0;border-radius:10px;padding:10px 18px;font-size:14px;cursor:pointer;font-family:system-ui,sans-serif}
+  button.gold:disabled{opacity:.5;cursor:default}
+  #status{font-family:system-ui,sans-serif;font-size:13px;min-height:18px}
+  #status.ok{color:#3a7d2c} #status.err{color:#a23}
+  footer{color:var(--mut);font-size:12px;text-align:center;margin-top:auto;padding-top:20px;font-family:system-ui,sans-serif}
+  a{color:var(--gold)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">Bible<b>Voice</b> · Super-admin</div>
+    <div class="sub">📋 Living backlog — canonical copy, owner only. Sign in to view and edit.</div>
+  </header>
+
+  <div class="card">
+    <div class="row">
+      <div>
+        <div class="k">Sign in</div>
+        <div class="meta" id="who">Not signed in — backlog is read-only.</div>
+      </div>
+      <div id="gsi"></div>
+    </div>
+    <div class="meta" id="cfgNote" style="margin-top:8px"></div>
+  </div>
+
+  <div class="card">
+    <div class="row" style="margin-bottom:10px">
+      <div class="k">📋 Backlog</div>
+      <div class="meta" id="bmeta">loading…</div>
+    </div>
+    <textarea id="content" disabled placeholder="Loading backlog…"></textarea>
+    <div class="row" style="margin-top:10px">
+      <div id="status"></div>
+      <button class="gold" id="save" disabled>Save backlog</button>
+    </div>
+  </div>
+
+  <footer><a href="/">← biblevoice.net</a> · panel reserved for the project owner</footer>
+</div>
+
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script>
+(function(){
+  var token = sessionStorage.getItem('bv_admin_token') || '';
+  var email = sessionStorage.getItem('bv_admin_email') || '';
+  var $ = function(id){ return document.getElementById(id); };
+
+  function setSigned(on){
+    $('who').textContent = on ? ('Signed in as ' + email) : 'Not signed in — sign in to view and edit the backlog.';
+    $('content').disabled = !on;
+    $('save').disabled = !on;
+    if (!on) { $('content').value = ''; $('content').placeholder = 'Sign in with the owner account to view the backlog.'; $('bmeta').textContent = 'locked'; }
+  }
+  function status(msg, cls){ var s=$('status'); s.textContent=msg||''; s.className=cls||''; }
+
+  function loadBacklog(){
+    if (!token) return;
+    fetch('/api/admin/backlog', { headers: { 'Authorization': 'Bearer ' + token } }).then(function(r){
+      if (r.status === 401) { token=''; email=''; sessionStorage.removeItem('bv_admin_token'); sessionStorage.removeItem('bv_admin_email'); setSigned(false); return null; }
+      return r.json();
+    }).then(function(j){
+      if (!j) return;
+      $('content').value = j.content || '';
+      $('bmeta').textContent = j.updatedAt ? ('updated ' + new Date(j.updatedAt).toLocaleString() + (j.updatedBy ? ' by ' + j.updatedBy : '')) : (j.db === false ? 'no database connected' : 'never updated');
+    }).catch(function(){ $('bmeta').textContent = 'failed to load'; });
+  }
+
+  $('save').onclick = function(){
+    status('Saving…');
+    fetch('/api/admin/backlog', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + token },
+      body: JSON.stringify({ content: $('content').value })
+    }).then(function(r){
+      if (r.status === 401) { token=''; sessionStorage.removeItem('bv_admin_token'); setSigned(false); status('Session expired — sign in again.','err'); return null; }
+      return r.json();
+    }).then(function(j){
+      if (!j) return;
+      if (j.error) { status('Save failed: ' + j.error, 'err'); return; }
+      $('bmeta').textContent = 'updated ' + new Date(j.updatedAt).toLocaleString() + ' by ' + (j.updatedBy || '');
+      status('Saved ✓','ok');
+    }).catch(function(){ status('Save failed (network).','err'); });
+  };
+
+  function onCredential(resp){
+    fetch('/api/admin/login', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ credential: resp.credential })
+    }).then(function(r){ return r.ok ? r.json() : null; }).then(function(j){
+      if (!j || !j.token) { status('Sign-in refused — only the owner account may edit.','err'); return; }
+      token = j.token; email = j.email;
+      sessionStorage.setItem('bv_admin_token', token);
+      sessionStorage.setItem('bv_admin_email', email);
+      setSigned(true); status('Signed in ✓','ok');
+      loadBacklog();
+    }).catch(function(){ status('Sign-in failed.','err'); });
+  }
+
+  fetch('/api/admin/config').then(function(r){ return r.json(); }).then(function(cfg){
+    if (!cfg.clientId) {
+      $('cfgNote').textContent = 'GOOGLE_CLIENT_ID is not configured on the server yet — sign-in disabled (read-only).';
+      return;
+    }
+    var tries = 0;
+    (function initGsi(){
+      if (window.google && google.accounts && google.accounts.id) {
+        google.accounts.id.initialize({ client_id: cfg.clientId, callback: onCredential });
+        google.accounts.id.renderButton($('gsi'), { theme:'outline', size:'large', text:'signin_with' });
+      } else if (tries++ < 50) setTimeout(initGsi, 200);
+    })();
+  });
+
+  setSigned(!!token);
+  loadBacklog();
+})();
+</script>
+</body>
+</html>

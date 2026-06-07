@@ -1,0 +1,135 @@
+{
+  "translation": "KJA",
+  "license": "Public Domain",
+  "source": "https://bible.helloao.org",
+  "canonGroup": "deuterocanon",
+  "bookCount": 14,
+  "books": [
+    {
+      "id": "1ES",
+      "name": "1 Esdras",
+      "order": 67,
+      "testament": "AP",
+      "canonGroup": "deuterocanon",
+      "numberOfChapters": 9,
+      "totalNumberOfVerses": 448
+    },
+    {
+      "id": "2ES",
+      "name": "2 Esdras",
+      "order": 68,
+      "testament": "AP",
+      "canonGroup": "deuterocanon",
+      "numberOfChapters": 16,
+      "totalNumberOfVerses": 874
+    },
+    {
+      "id": "TOB",
+      "name": "Tobit",
+      "order": 69,
+      "testament": "AP",
+      "canonGroup": "deuterocanon",
+      "numberOfChapters": 14,
+      "totalNumberOfVerses": 244
+    },
+    {
+      "id": "JDT",
+      "name": "Judith",
+      "order": 70,
+      "testament": "AP",
+      "canonGroup": "deuterocanon",
+      "numberOfChapters": 16,
+      "totalNumberOfVerses": 339
+    },
+    {
+      "id": "ESG",
+      "name": "Esther (Greek)",
+      "order": 71,
+      "testament": "AP",
+      "canonGroup": "deuterocanon",
+      "numberOfChapters": 7,
+      "totalNumberOfVerses": 105
+    },
+    {
+      "id": "WIS",
+      "name": "Wisdom",
+      "order": 72,
+      "testament": "AP",
+      "canonGroup": "deuterocanon",
+      "numberOfChapters": 19,
+      "totalNumberOfVerses": 436
+    },
+    {
+      "id": "SIR",
+      "name": "Sirach",
+      "order": 73,
+      "testament": "AP",
+      "canonGroup": "deuterocanon",
+      "numberOfChapters": 51,
+      "totalNumberOfVerses": 1393
+    },
+    {
+      "id": "BAR",
+      "name": "Baruch",
+      "order": 74,
+      "testament": "AP",
+      "canonGroup": "deuterocanon",
+      "numberOfChapters": 6,
+      "totalNumberOfVerses": 213
+    },
+    {
+      "id": "S3Y",
+      "name": "Azariah",
+      "order": 75,
+      "testament": "AP",
+      "canonGroup": "deuterocanon",
+      "numberOfChapters": 1,
+      "totalNumberOfVerses": 68
+    },
+    {
+      "id": "SUS",
+      "name": "Susanna",
+      "order": 76,
+      "testament": "AP",
+      "canonGroup": "deuterocanon",
+      "numberOfChapters": 1,
+      "totalNumberOfVerses": 64
+    },
+    {
+      "id": "BEL",
+      "name": "Bel",
+      "order": 77,
+      "testament": "AP",
+      "canonGroup": "deuterocanon",
+      "numberOfChapters": 1,
+      "totalNumberOfVerses": 42
+    },
+    {
+      "id": "MAN",
+      "name": "Manasseh",
+      "order": 78,
+      "testament": "AP",
+      "canonGroup": "deuterocanon",
+      "numberOfChapters": 1,
+      "totalNumberOfVerses": 15
+    },
+    {
+      "id": "1MA",
+      "name": "1 Maccabees",
+      "order": 79,
+      "testament": "AP",
+      "canonGroup": "deuterocanon",
+      "numberOfChapters": 16,
+      "totalNumberOfVerses": 924
+    },
+    {
+      "id": "2MA",
+      "name": "2 Maccabees",
+      "order": 80,
+      "testament": "AP",
+      "canonGroup": "deuterocanon",
+      "numberOfChapters": 15,
+      "totalNumberOfVerses": 555
+    }
+  ]
+}

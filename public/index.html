@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>BibleVoice — Talk with the Word of God · Free</title>
+<meta name="description" content="A free portal to the Holy Bible. Talk or type to a warm, Scripture-grounded companion — ask anything, hear it read aloud, and welcome the Holy Spirit of Jesus into your life." />
+<style>
+  :root{ --bg:#f7f1e3; --panel:#ffffff; --panel2:#f2ebd8; --ink:#2d2920; --mut:#8a7f62; --gold:#b3852a; --accent:#7 aa; --line:#e8dfc8; }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Georgia,'Times New Roman',serif;background:radial-gradient(140% 130% at 50% 4%, #fffaf0 0%, #f6eccf 46%, #ead69e 100%);color:var(--ink);min-height:100vh}
+  .wrap{max-width:860px;margin:0 auto;padding:5vh 20px 24px;position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column}
+  header{text-align:center;margin:14px 0 22px}
+  .logo{font-size:30px;letter-spacing:.5px}
+  .logo b{color:var(--gold)}
+  .tag{color:var(--mut);font-size:15px;margin-top:6px}
+  .langs{margin-top:8px;color:var(--mut);font-size:12px;font-family:system-ui,sans-serif}
+  .vod{background:linear-gradient(180deg,#fffdf6,#f9f1dd);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:18px}
+  .vod .k{color:var(--gold);font-size:12px;letter-spacing:1.5px;text-transform:uppercase;font-family:system-ui,sans-serif}
+  .vod .t{font-size:18px;margin:6px 0 4px;line-height:1.5}
+  .vod .r{color:var(--mut);font-size:14px}
+  .chat{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+  .msgs{padding:18px;min-height:240px;max-height:52vh;overflow:auto;display:flex;flex-direction:column;gap:12px}
+  .m{padding:11px 14px;border-radius:12px;line-height:1.55;font-size:16px;max-width:88%;white-space:pre-wrap}
+  .m.user{align-self:flex-end;background:var(--panel2);border:1px solid var(--line)}
+  .m.bot{align-self:flex-start;background:#fbf5e7;border:1px solid var(--line)}
+  .m.bot .verse{display:block;margin-top:8px;color:var(--gold);font-style:italic}
+  .hint{color:var(--mut);font-size:14px;font-family:system-ui,sans-serif;text-align:center;padding:8px 16px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding:4px 14px 12px}
+  .chip{background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:999px;padding:7px 12px;font-size:13px;cursor:pointer;font-family:system-ui,sans-serif}
+  .chip:hover{border-color:var(--gold)}
+  .bar{display:flex;gap:8px;padding:12px;border-top:1px solid var(--line);background:#fbf5e8}
+  .bar input{flex:1;background:#ffffff;border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:12px 14px;font-size:16px;font-family:system-ui,sans-serif}
+  .bar button{border:0;border-radius:10px;padding:0 16px;font-size:15px;cursor:pointer;font-family:system-ui,sans-serif}
+  #mic{background:var(--panel2);color:var(--ink);border:1px solid var(--line);min-width:52px}
+  #mic.live{background:#5b1d1d;border-color:#a23}
+  #send{background:var(--gold);color:#1a1406;font-weight:700}
+  footer{color:var(--mut);font-size:12px;text-align:center;margin-top:auto;padding-top:24px;font-family:system-ui,sans-serif;line-height:1.7}
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas><div id="glow"></div><div id="rays"></div>
+<style>
+#bg{position:fixed;inset:0;z-index:0;pointer-events:none}
+#glow{position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(760px 640px at 50% -4%, rgba(255,248,222,.6), rgba(255,234,176,.32) 32%, rgba(242,206,120,.13) 52%, transparent 64%);animation:bvpulse 7s ease-in-out infinite}
+#rays{position:fixed;left:50%;top:2%;width:215vmax;height:215vmax;transform:translate(-50%,-50%);z-index:0;pointer-events:none;background:repeating-conic-gradient(from 0deg at 50% 50%, rgba(216,170,78,0) 0deg, rgba(216,170,78,0) 2.3deg, rgba(216,170,78,.18) 3.4deg, rgba(216,170,78,0) 4.5deg, rgba(216,170,78,0) 7deg);-webkit-mask-image:radial-gradient(closest-side, #000 0%, rgba(0,0,0,.9) 15%, rgba(0,0,0,.4) 44%, transparent 70%);mask-image:radial-gradient(closest-side, #000 0%, rgba(0,0,0,.9) 15%, rgba(0,0,0,.4) 44%, transparent 70%);animation:rayspin 120s linear infinite}
+@keyframes bvpulse{0%,100%{opacity:.86;transform:scale(1)}50%{opacity:1;transform:scale(1.035)}}
+@keyframes rayspin{to{transform:translate(-50%,-50%) rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){#glow{animation:none}#rays{animation:none}}
+</style>
+<script>
+(function(){var c=document.getElementById('bg'),x=c.getContext('2d'),w,h,P=[];var R=matchMedia('(prefers-reduced-motion:reduce)').matches;
+function mk(){return{x:Math.random()*w,y:h+Math.random()*h,r:Math.random()*1.6+0.5,s:Math.random()*0.22+0.05,a:Math.random()*0.34+0.08,t:Math.random()*1000}}
+function init(){w=c.width=innerWidth;h=c.height=innerHeight;P=Array.from({length:Math.max(16,Math.min(48,Math.floor(w/28)))},mk)}
+function draw(){x.clearRect(0,0,w,h);for(var i=0;i<P.length;i++){var p=P[i];p.y-=p.s;p.x+=Math.sin((p.y+p.t)/130)*0.12;if(p.y<-12){p=mk();p.y=h+12;P[i]=p;}var g=x.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*5);g.addColorStop(0,'rgba(208,160,70,'+p.a+')');g.addColorStop(1,'rgba(208,160,70,0)');x.fillStyle=g;x.beginPath();x.arc(p.x,p.y,p.r*5,0,6.283);x.fill();}requestAnimationFrame(draw);}
+addEventListener('resize',init);init();if(!R)draw();})();
+</script>
+<div class="wrap">
+  <header>
+    <div class="logo">Bible<b>Voice</b></div>
+    <div class="tag" id="tagline">Receive the Word of God. Free, for everyone.</div>
+    <div class="langs" id="langPick">
+      <span data-l="en" style="cursor:pointer">English</span> ·
+      <span data-l="fr" style="cursor:pointer">Français</span> ·
+      <span data-l="es" style="cursor:pointer">Español</span>
+    </div>
+    <div style="margin-top:16px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+      <a href="/read" id="readBtn" style="font-family:system-ui,sans-serif;font-size:14px;background:#f2ebd8;border:1px solid var(--gold);color:var(--gold);border-radius:999px;padding:10px 18px;text-decoration:none">📖 Read the Bible online</a>
+      <button id="homeRandom" style="font-family:system-ui,sans-serif;font-size:14px;background:#f2ebd8;border:1px solid var(--line);color:var(--ink);border-radius:999px;padding:10px 18px;cursor:pointer">🎲 Open a random page</button>
+      <button id="openAI" title="Let the AI help you connect with God through His Word" style="font-family:system-ui,sans-serif;font-size:14px;background:var(--gold);color:#1a1406;font-weight:700;border:0;border-radius:999px;padding:10px 18px;cursor:pointer">💬 Talk with the AI guide</button>
+    </div>
+    <div id="reach" style="margin-top:14px;font-family:system-ui,sans-serif;color:var(--gold);font-size:14px;min-height:18px"></div>
+  </header>
+
+  <div class="vod" id="vod" hidden>
+    <div class="k" id="vodLabel">Today's Verse</div>
+    <div class="t" id="vod-t"></div>
+    <div class="r" id="vod-r"></div>
+  </div>
+
+  <div id="aiPanel" hidden>
+  <div id="aiIntro" style="font-family:system-ui,sans-serif;color:var(--mut);font-size:13px;margin:4px 0 10px;text-align:center">Your guide to connect with God through His Word — ask anything, by text or voice.</div>
+  <div class="chat">
+    <div class="msgs" id="msgs">
+      <div class="m bot">Peace be with you. I'm here to help you explore the Bible and draw near to God. Tell me what's on your heart — or ask about any verse, person, or theme. You can type, or tap the mic and speak.</div>
+    </div>
+    <div class="chips" id="chips">
+      <span class="chip">I feel anxious</span>
+      <span class="chip">Who is Jesus?</span>
+      <span class="chip">Read John 3:16</span>
+      <span class="chip">How do I pray?</span>
+      <span class="chip">I'm grieving</span>
+      <span class="chip">What is the Holy Spirit?</span>
+    </div>
+    <div class="bar">
+      <button id="mic" title="Speak">🎙️</button>
+      <input id="inp" placeholder="Ask anything, or share how you feel…" autocomplete="off" />
+      <button id="send">Send</button>
+    </div>
+  </div>
+
+  <div class="hint" id="speak-hint" style="margin-top:10px"><label style="font-family:system-ui;cursor:pointer"><input type="checkbox" id="tts" checked> 🔊 Read answers aloud</label></div>
+  </div>
+
+  <section style="margin-top:26px;font-family:system-ui,sans-serif;text-align:center;color:var(--mut);font-size:13px;line-height:1.7">
+    <div id="churchLine">Looking for a church family? <a href="https://essentielmtl.com/" target="_blank" rel="noopener" style="color:var(--gold);text-decoration:none">Église Essentiæl</a> — “une maison pour tous,” in Montréal.</div>
+    <div style="opacity:.95">
+      <a href="https://essentielmtl.com/" target="_blank" rel="noopener" style="color:var(--gold);text-decoration:none">Visit</a> ·
+      <a href="https://essentielmtl.com/preches/" target="_blank" rel="noopener" style="color:var(--gold);text-decoration:none">Messages</a> ·
+      <a href="https://goo.gl/maps/KF59T6pnuBx7a91t8" target="_blank" rel="noopener" style="color:var(--gold);text-decoration:none">Sundays · 1000 Sherbrooke O.</a>
+    </div>
+  </section>
+
+  <footer>
+    <span style="color:var(--gold)">BibleVoice</span> — a free digital ministry. An AI shaped by Scripture, here to point you to God — never to replace Him, His Spirit, or His Church.<br/>
+    <span style="opacity:.85">Berean Standard Bible + KJV Apocrypha · Public Domain</span><br/>
+    <span style="opacity:.85">Made by <a href="https://zen-ai.net" target="_blank" rel="noopener" style="color:var(--gold);text-decoration:none">Zen-AI.net</a> · powered through the Holy Spirit</span><br/>
+    <a href="/privacy" style="color:var(--mut);text-decoration:none;opacity:.85">Privacy</a>
+  </footer>
+</div>
+
+<script>
+const msgs=document.getElementById('msgs'), inp=document.getElementById('inp'),
+      send=document.getElementById('send'), mic=document.getElementById('mic'),
+      tts=document.getElementById('tts');
+let history=[];
+
+// --- Language (shared with the reader via bv_lang) ---
+const I18N={
+  en:{tag:'Receive the Word of God. Free, for everyone.',read:'📖 Read the Bible online',rnd:'🎲 Open a random page',ai:'💬 Talk with the AI guide',aiOpen:'💬 Ask the guide below ↓',vod:"Today's Verse",intro:'Your guide to connect with God through His Word — ask anything, by text or voice.',greet:"Peace be with you. I'm here to help you explore the Bible and draw near to God. Tell me what's on your heart — or ask about any verse, person, or theme. You can type, or tap the mic and speak.",chips:['I feel anxious','Who is Jesus?','Read John 3:16','How do I pray?',"I'm grieving",'What is the Holy Spirit?'],ph:'Ask anything, or share how you feel…',send:'Send',tts:'🔊 Read answers aloud',open:'📖 Open {ref} in the reader →',err:'Something went wrong. Please try again.',reach:(n)=>'🕊️ The word of God was shared with '+n.toLocaleString()+' '+(n===1?'person':'people')+' today.',church:'Looking for a church family?',sr:'en-US'},
+  fr:{tag:'Recevez la Parole de Dieu. Gratuite, pour tous.',read:'📖 Lire la Bible en ligne',rnd:'🎲 Ouvrir une page au hasard',ai:'💬 Parler au guide IA',aiOpen:'💬 Posez votre question ci-dessous ↓',vod:'Verset du jour',intro:'Votre guide pour vous rapprocher de Dieu par Sa Parole — demandez tout, par texte ou par la voix.',greet:'Que la paix soit avec vous. Je suis là pour vous aider à explorer la Bible et à vous approcher de Dieu. Dites-moi ce qui habite votre cœur — ou posez une question sur un verset, un personnage ou un thème.',chips:['Je me sens anxieux','Qui est Jésus ?','Lire Jean 3:16','Comment prier ?','Je suis en deuil',"Qu'est-ce que le Saint-Esprit ?"],ph:'Demandez ce que vous voulez, ou partagez ce que vous ressentez…',send:'Envoyer',tts:'🔊 Lire les réponses à voix haute',open:'📖 Ouvrir {ref} dans le lecteur →',err:'Une erreur est survenue. Veuillez réessayer.',reach:(n)=>'🕊️ La parole de Dieu a été partagée avec '+n.toLocaleString()+' personne'+(n>1?'s':'')+' aujourd’hui.',church:'Vous cherchez une famille d’église ?',sr:'fr-FR'},
+  es:{tag:'Recibe la Palabra de Dios. Gratis, para todos.',read:'📖 Leer la Biblia en línea',rnd:'🎲 Abrir una página al azar',ai:'💬 Habla con la guía IA',aiOpen:'💬 Pregunta a la guía abajo ↓',vod:'Versículo del día',intro:'Tu guía para acercarte a Dios por Su Palabra — pregunta lo que quieras, por texto o por voz.',greet:'La paz sea contigo. Estoy aquí para ayudarte a explorar la Biblia y acercarte a Dios. Cuéntame lo que hay en tu corazón — o pregunta por un versículo, un personaje o un tema.',chips:['Me siento ansioso','¿Quién es Jesús?','Leer Juan 3:16','¿Cómo orar?','Estoy de duelo','¿Qué es el Espíritu Santo?'],ph:'Pregunta lo que quieras, o comparte cómo te sientes…',send:'Enviar',tts:'🔊 Leer las respuestas en voz alta',open:'📖 Abrir {ref} en el lector →',err:'Algo salió mal. Inténtalo de nuevo.',reach:(n)=>'🕊️ La palabra de Dios fue compartida con '+n.toLocaleString()+' persona'+(n>1?'s':'')+' hoy.',church:'¿Buscas una familia de iglesia?',sr:'es-ES'}
+};
+const nav2=(navigator.language||'').slice(0,2).toLowerCase();
+let LANG=localStorage.getItem('bv_lang')||(['fr','es'].includes(nav2)?nav2:'en');
+if(!I18N[LANG])LANG='en';
+let lastReach=0;
+function t(){return I18N[LANG];}
+function applyLang(){
+  const x=t();
+  document.documentElement.lang=LANG;
+  document.getElementById('tagline').textContent=x.tag;
+  document.getElementById('readBtn').textContent=x.read;
+  document.getElementById('readBtn').href=LANG==='en'?'/read':'/read?l='+LANG;
+  document.getElementById('homeRandom').textContent=x.rnd;
+  const ai=document.getElementById('openAI');
+  ai.textContent=document.getElementById('aiPanel').hidden?x.ai:x.aiOpen;
+  document.getElementById('vodLabel').textContent=x.vod;
+  document.getElementById('aiIntro').textContent=x.intro;
+  inp.placeholder=x.ph; send.textContent=x.send;
+  document.querySelector('#speak-hint label').lastChild.textContent=' '+x.tts;
+  document.getElementById('churchLine').firstChild.textContent=x.church+' ';
+  const chips=document.querySelectorAll('#chips .chip');
+  x.chips.forEach((c,i)=>{ if(chips[i]) chips[i].textContent=c; });
+  if(history.length===0){ const first=msgs.querySelector('.m.bot'); if(first) first.textContent=x.greet; }
+  document.querySelectorAll('#langPick span').forEach(s=>{ s.style.color=s.dataset.l===LANG?'var(--gold)':''; s.style.fontWeight=s.dataset.l===LANG?'700':''; });
+  if(lastReach>0) document.getElementById('reach').textContent=x.reach(lastReach);
+  loadVod();
+}
+document.getElementById('langPick').addEventListener('click',e=>{
+  const l=e.target&&e.target.dataset&&e.target.dataset.l; if(!l||l===LANG)return;
+  LANG=l; localStorage.setItem('bv_lang',LANG); if(rec)rec.lang=t().sr; applyLang();
+});
+function loadVod(){
+  fetch('/api/vod?lang='+LANG).then(r=>r.json()).then(j=>{ if(j.verse){ document.getElementById('vod').hidden=false;
+    document.getElementById('vod-t').textContent='“'+j.verse.text+'”';
+    document.getElementById('vod-r').textContent='— '+j.verse.ref; }}).catch(()=>{});
+}
+
+function add(role,text,verses){
+  const d=document.createElement('div'); d.className='m '+(role==='user'?'user':'bot');
+  d.textContent=text;
+  if(verses&&verses.length&&role==='bot'){ /* references already in text */ }
+  msgs.appendChild(d); msgs.scrollTop=msgs.scrollHeight; return d;
+}
+function speak(t){ if(!tts.checked||!window.speechSynthesis)return; const u=new SpeechSynthesisUtterance(t); u.rate=.95; speechSynthesis.cancel(); speechSynthesis.speak(u); }
+
+async function sendMsg(text){
+  text=(text||inp.value).trim(); if(!text)return;
+  inp.value=''; add('user',text); history.push({role:'user',content:text});
+  const wait=add('bot','…');
+  try{
+    const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:history,deviceId:(localStorage.getItem('bv_device')||''),lang:LANG})});
+    const j=await r.json();
+    wait.textContent=j.reply||'(no reply)';
+    if(j.goto){ const a=document.createElement('a'); a.href=`/read?b=${j.goto.bookId}&c=${j.goto.chapter}${LANG==='en'?'':'&l='+LANG}`; a.textContent=t().open.replace('{ref}',j.goto.ref); a.style.cssText='display:inline-block;margin-top:10px;font-family:system-ui,sans-serif;font-size:14px;color:var(--gold);text-decoration:none;border:1px solid var(--gold);border-radius:999px;padding:7px 13px'; wait.appendChild(document.createElement('br')); wait.appendChild(a); msgs.scrollTop=msgs.scrollHeight; }
+    history.push({role:'assistant',content:j.reply||''});
+    speak(j.reply||'');
+  }catch(e){ wait.textContent=t().err; }
+}
+send.onclick=()=>sendMsg();
+inp.addEventListener('keydown',e=>{if(e.key==='Enter')sendMsg();});
+document.getElementById('chips').addEventListener('click',e=>{if(e.target.classList.contains('chip'))sendMsg(e.target.textContent);});
+
+// Voice input (Web Speech API where available)
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+let rec=null;
+if(SR){ rec=new SR(); rec.lang=t().sr; rec.interimResults=false;
+  mic.onclick=()=>{ mic.classList.add('live'); try{rec.start();}catch(_){} };
+  rec.onresult=e=>{ mic.classList.remove('live'); sendMsg(e.results[0][0].transcript); };
+  rec.onerror=()=>mic.classList.remove('live'); rec.onend=()=>mic.classList.remove('live');
+} else { mic.title='Voice not supported in this browser'; mic.style.opacity=.5; }
+
+document.getElementById('homeRandom').onclick=async()=>{ try{ const j=await (await fetch('/api/random?lang='+LANG)).json(); location.href=`/read?b=${j.bookId}&c=${j.chapter}${LANG==='en'?'':'&l='+LANG}`; }catch(e){ location.href='/read'; } };
+document.getElementById('openAI').onclick=()=>{ const p=document.getElementById('aiPanel'); p.hidden=false; document.getElementById('openAI').textContent=t().aiOpen; try{inp.focus();}catch(e){} p.scrollIntoView({behavior:'smooth',block:'center'}); };
+
+(function(){ var id=localStorage.getItem('bv_device'); if(!id){ id='d'+Math.random().toString(36).slice(2)+Date.now().toString(36); localStorage.setItem('bv_device',id); }
+ fetch('/api/visit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({deviceId:id})}).then(function(r){return r.json();}).then(function(j){ if(j&&typeof j.today==='number'&&j.today>0){ lastReach=j.today; document.getElementById('reach').textContent=t().reach(j.today); } }).catch(function(){}); })();
+
+applyLang();
+</script>
+</body>
+</html>
