@@ -1,0 +1,46 @@
+{
+  "contractVersion": "2.0-draft1",
+  "version": 1,
+  "_note": "Logos/biblevoice consent manifest. Full-trust family era = permissive allow, but the deny list and secret scan run regardless (council v2 contract section 5). data/** is the deployed Scripture corpus — already present on the voice server and reconstructible from scripts/assemble_*.mjs, so it is excluded from brain sync by size, not secrecy.",
+  "share": {
+    "allow": [
+      "IDENTITY.md",
+      "src/**",
+      "public/**",
+      "scripts/**",
+      "docs/**",
+      "*.md",
+      "package.json",
+      "tsconfig.json",
+      "Dockerfile",
+      "consent.json"
+    ],
+    "deny": [
+      ".env*",
+      "secrets/**",
+      "**/credentials*",
+      "private/**",
+      "node_modules/**",
+      "data/**",
+      "typecheck.*",
+      ".git/**"
+    ]
+  },
+  "secretScan": {
+    "blockPatterns": [
+      "sk-ant-[A-Za-z0-9_\\-]{8,}",
+      "postgres(ql)?://\\S{8,}",
+      "\\b[0-9a-fA-F]{32,}\\b",
+      "Bearer\\s+[A-Za-z0-9_\\-\\.]{24,}",
+      "-----BEGIN [A-Z ]*PRIVATE KEY-----",
+      "PRIVATE\\s*[-]+\\s*DO\\s*NOT\\s*PUBLISH",
+      "(ANTHROPIC_API_KEY|ADMIN_API_TOKEN|BRIDGE_SECRET|COUNCIL_JOIN_TOKEN|ADMIN_SESSION_SECRET|DATABASE_URL)\\s*=\\s*[A-Za-z0-9]",
+      "(matpay@|mat\\.pay@|@zen-solutions\\.net|@hotmail\\.ca)"
+    ],
+    "allowList": []
+  },
+  "audience": {
+    "family": "full",
+    "default": "none"
+  }
+}

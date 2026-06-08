@@ -51,8 +51,10 @@ foreach ($rel in $fileList) {
     }
     # Skip bulky corpus/vendored data; binary-ish files are unlikely to regex-match anyway.
     if ($rel -match "^data/|^node_modules/|^dist/") { continue }
-    # The scanner itself contains the patterns as literals — don't self-match.
-    if ($rel -replace "\\", "/" -eq "scripts/secret-scan.ps1") { continue }
+    # Policy files contain the patterns as literals — don't self-match.
+    # (consent.json is the council v2 consent manifest; both are audited by review, not regex.)
+    $relNorm = $rel -replace "\\", "/"
+    if ($relNorm -eq "scripts/secret-scan.ps1" -or $relNorm -eq "consent.json") { continue }
     $item = Get-Item $full
     if ($item.Length -gt 2MB) { continue }
     $text = ""

@@ -12,7 +12,18 @@
  */
 import crypto from "node:crypto";
 import Anthropic from "@anthropic-ai/sdk";
-import { getCouncilState, setCouncilSecret, setCouncilRegistered } from "./db.js";
+import { getCouncilState, setCouncilSecret, setCouncilRegistered, brainGetContent } from "./db.js";
+
+// --- Council v2 protocol canon (contract 2.0-draft1, reimplemented byte-for-byte per spec) ---
+export const V2_CONTRACT_VERSION = "2.0-draft1";
+export function sha256Hex(data: string | Buffer): string {
+  return crypto.createHash("sha256").update(typeof data === "string" ? Buffer.from(data, "utf8") : data).digest("hex");
+}
+/** brainVersion = sha256 over path-ascending "<path> <hex>" lines joined with \n, "sha256:"-prefixed. */
+export function computeBrainVersion(chunks: { path: string; sha256: string }[]): string {
+  const ordered = [...chunks].sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
+  return "sha256:" + sha256Hex(ordered.map((c) => `${c.path} ${c.sha256}`).join("\n"));
+}
 
 const HUB = process.env.COUNCIL_HUB || "https://architectscouncil.com";
 // COUNCIL_MODEL lets the owner give the council voice a stronger model (e.g. Opus)
@@ -98,6 +109,12 @@ export function outboxWithIds(): { id: string; note: string }[] {
 
 export async function architectReply(from: string, message: string, history: { speaker: string; text: string }[]): Promise<{ reply: string; done: boolean }> {
   if (!client) return { reply: "(BibleVoice architect is offline — no API key configured.)", done: true };
+  // Council v2: if a brain has been uploaded, the voice speaks from its IDENTITY.md verbatim
+  // (authored locally by Logos alone). The hard rules below still outrank everything.
+  const identity = await brainGetContent("IDENTITY.md");
+  const system = identity
+    ? `YOUR UPLOADED IDENTITY (authored by your local architect — speak from it):\n\n${identity}\n\n---\n\n${ARCHITECT_SYSTEM}`
+    : ARCHITECT_SYSTEM;
   // Council calls are uncapped by owner's decision; the rate limits protect only the public website bot.
   const transcript = (history || []).map((h) => `${h.speaker}: ${h.text}`).join("\n");
   const outboxNote = OUTBOX.length

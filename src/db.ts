@@ -49,7 +49,73 @@ export async function initDb(): Promise<void> {
     PRIMARY KEY (note_id, member)
   );`);
   await pool.query(`CREATE INDEX IF NOT EXISTS outbox_delivery_pending ON outbox_delivery(member) WHERE acked_at IS NULL;`);
+  // Council v2 (contract 2.0-draft1): the voice's uploaded knowledge base. The brain lives in
+  // the voice, never the hub; hashes are recomputed from received bytes, never trusted.
+  await pool.query(`CREATE TABLE IF NOT EXISTS brain_chunks (
+    path text PRIMARY KEY,
+    sha256 text NOT NULL,
+    bytes int NOT NULL,
+    content text NOT NULL,
+    updated_at timestamptz NOT NULL DEFAULT now()
+  );`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS brain_state (
+    id int PRIMARY KEY DEFAULT 1,
+    brain_version text,
+    manifest jsonb,
+    updated_at timestamptz
+  );`);
   console.log("[db] ready");
+}
+
+// --- Council v2 brain storage ---
+export interface BrainChunkMeta { path: string; sha256: string; bytes: number }
+
+export async function brainChunkList(): Promise<BrainChunkMeta[] | null> {
+  if (!pool) return null;
+  const r = await pool.query(`SELECT path, sha256, bytes FROM brain_chunks ORDER BY path`);
+  return r.rows.map((x: any) => ({ path: x.path, sha256: x.sha256, bytes: Number(x.bytes) }));
+}
+
+export async function brainApply(send: { path: string; sha256: string; bytes: number; content: string }[], deletePaths: string[]): Promise<void> {
+  if (!pool) throw new Error("no_database");
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    for (const p of deletePaths) await client.query(`DELETE FROM brain_chunks WHERE path = $1`, [p]);
+    for (const c of send) {
+      await client.query(
+        `INSERT INTO brain_chunks(path, sha256, bytes, content, updated_at) VALUES ($1, $2, $3, $4, now())
+         ON CONFLICT (path) DO UPDATE SET sha256 = EXCLUDED.sha256, bytes = EXCLUDED.bytes, content = EXCLUDED.content, updated_at = now()`,
+        [c.path, c.sha256, c.bytes, c.content]
+      );
+    }
+    await client.query("COMMIT");
+  } catch (e) { await client.query("ROLLBACK"); throw e; }
+  finally { client.release(); }
+}
+
+export async function brainGetContent(path: string): Promise<string | null> {
+  if (!pool) return null;
+  try { const r = await pool.query(`SELECT content FROM brain_chunks WHERE path = $1`, [path]); return r.rows[0]?.content ?? null; }
+  catch { return null; }
+}
+
+export async function brainSetState(version: string, manifest: any): Promise<void> {
+  if (!pool) throw new Error("no_database");
+  await pool.query(
+    `INSERT INTO brain_state(id, brain_version, manifest, updated_at) VALUES (1, $1, $2, now())
+     ON CONFLICT (id) DO UPDATE SET brain_version = EXCLUDED.brain_version, manifest = EXCLUDED.manifest, updated_at = now()`,
+    [version, manifest === undefined ? null : JSON.stringify(manifest)]
+  );
+}
+
+export async function brainGetState(): Promise<{ brainVersion: string | null; updatedAt: string | null } | null> {
+  if (!pool) return null;
+  try {
+    const r = await pool.query(`SELECT brain_version, updated_at FROM brain_state WHERE id = 1`);
+    if (!r.rows[0]) return { brainVersion: null, updatedAt: null };
+    return { brainVersion: r.rows[0].brain_version, updatedAt: r.rows[0].updated_at ? r.rows[0].updated_at.toISOString() : null };
+  } catch { return null; }
 }
 
 // --- Outbox delivery tracking (pending state IS the retry mechanism) ---

@@ -6,8 +6,8 @@ import { fileURLToPath } from "node:url";
 import { getIndex, getChapter, search, verseOfTheDay, pickLang } from "./canon.js";
 import { chat, type ChatMessage } from "./chat.js";
 import { readFileSync } from "node:fs";
-import { initDb, recordVisit, aiGate, recordAiCall, getBacklog, setBacklog, seedBacklogIfEmpty, outboxMarkPending, outboxAck, outboxAckedIds } from "./db.js";
-import { ensureCouncil, bridgeSecret, architectReply, reviewProposal, brainSnapshot, DISPLAY_NAME, REVIEW_CAPABILITIES, COUNCIL_MODEL_TIER, outboxWithIds } from "./council.js";
+import { initDb, recordVisit, aiGate, recordAiCall, getBacklog, setBacklog, seedBacklogIfEmpty, outboxMarkPending, outboxAck, outboxAckedIds, brainChunkList, brainApply, brainSetState, brainGetState } from "./db.js";
+import { ensureCouncil, bridgeSecret, architectReply, reviewProposal, brainSnapshot, DISPLAY_NAME, REVIEW_CAPABILITIES, COUNCIL_MODEL_TIER, outboxWithIds, computeBrainVersion, sha256Hex, V2_CONTRACT_VERSION } from "./council.js";
 import { adminAuth, verifyGoogleCredential, makeSessionToken, GOOGLE_CLIENT_ID } from "./admin.js";
 import { PUBLIC_MODEL_TIER } from "./chat.js";
 
@@ -36,6 +36,9 @@ app.use((req, res, next) => {
   );
   next();
 });
+// Council v2 brain uploads carry file batches (client maxBatchBytes ~1.5MB) — bigger limit on
+// that one bridge route only; everything else keeps the tight public cap.
+app.use("/api/bridge/brain-upload", express.json({ limit: "6mb" }));
 app.use(express.json({ limit: "1mb" }));
 
 // Simple in-memory per-IP rate limiter for the admin auth surface (brute-force guard).
@@ -169,6 +172,90 @@ app.post("/api/bridge/outbox/ack", bridgeAuth, async (req, res) => {
     const acked = await outboxAck(ids, member);
     res.json({ acked });
   } catch (e: any) { console.error("[bridge/outbox/ack]", e?.message || e); res.status(500).json({ error: "outbox_ack_failed" }); }
+});
+
+// --- Council v2 brain sync (contract 2.0-draft1; member secret auth; hashes recomputed, never trusted) ---
+const BRAIN_PATH_RE = /^[A-Za-z0-9_][A-Za-z0-9_.\/\-]{0,299}$/;
+function validBrainPath(p: any): boolean {
+  return typeof p === "string" && BRAIN_PATH_RE.test(p) && !p.includes("..") && !p.startsWith("/");
+}
+app.get("/api/bridge/brain-chunks", bridgeAuth, async (_req, res) => {
+  try {
+    const list = await brainChunkList();
+    if (!list) return res.status(503).json({ error: "no_database" });
+    res.json({ chunks: list.map(({ path, sha256 }) => ({ path, sha256 })) });
+  } catch (e: any) { console.error("[brain-chunks]", e?.message || e); res.status(500).json({ error: "brain_chunks_failed" }); }
+});
+app.post("/api/bridge/brain-upload", bridgeAuth, async (req, res) => {
+  try {
+    const b = req.body || {};
+    const send = Array.isArray(b.send) ? b.send : [];
+    const deletePaths = Array.isArray(b.deletePaths) ? b.deletePaths : [];
+    if (send.length > 500 || deletePaths.length > 2000) return res.status(413).json({ error: "batch_too_large" });
+    const mismatched: string[] = [];
+    const apply: { path: string; sha256: string; bytes: number; content: string }[] = [];
+    for (const c of send) {
+      if (!validBrainPath(c?.path) || typeof c?.content !== "string" || c.content.length > 2_000_000) {
+        return res.status(400).json({ error: "invalid_chunk", path: String(c?.path || "?").slice(0, 100) });
+      }
+      // Integrity by construction: recompute from received bytes; the sender's claim is never trusted.
+      const actual = sha256Hex(c.content);
+      if (c.sha256 && c.sha256 !== actual) { mismatched.push(c.path); continue; }
+      apply.push({ path: c.path, sha256: actual, bytes: Buffer.byteLength(c.content, "utf8"), content: c.content });
+    }
+    if (mismatched.length) return res.status(400).json({ error: "sha256_mismatch", mismatched });
+    for (const p of deletePaths) if (!validBrainPath(p)) return res.status(400).json({ error: "invalid_delete_path" });
+    await brainApply(apply, deletePaths);
+    res.json({ applied: apply.length, deleted: deletePaths.length });
+  } catch (e: any) {
+    if (String(e?.message).includes("no_database")) return res.status(503).json({ error: "no_database" });
+    console.error("[brain-upload]", e?.message || e); res.status(500).json({ error: "brain_upload_failed" });
+  }
+});
+app.post("/api/bridge/brain-commit", bridgeAuth, async (req, res) => {
+  try {
+    const list = await brainChunkList();
+    if (!list) return res.status(503).json({ error: "no_database" });
+    const brainVersion = computeBrainVersion(list); // recomputed over the FULL held set, independently
+    const manifest = req.body?.manifest;
+    if (manifest && manifest.brainVersion && manifest.brainVersion !== brainVersion) {
+      // Both sides must arrive at the same hash independently; report ours so the client fails loudly.
+      return res.status(409).json({ error: "brain_version_mismatch", brainVersion });
+    }
+    await brainSetState(brainVersion, manifest ?? null);
+    res.json({ brainVersion });
+  } catch (e: any) { console.error("[brain-commit]", e?.message || e); res.status(500).json({ error: "brain_commit_failed" }); }
+});
+app.get("/api/bridge/brain-version", bridgeAuth, async (_req, res) => {
+  try {
+    const list = await brainChunkList();
+    if (!list) return res.status(503).json({ error: "no_database" });
+    const state = await brainGetState();
+    res.json({
+      member: "biblevoice",
+      displayName: DISPLAY_NAME,
+      brainVersion: list.length ? computeBrainVersion(list) : null,
+      updatedAt: state?.updatedAt ?? null,
+      contractVersion: V2_CONTRACT_VERSION,
+    });
+  } catch (e: any) { console.error("[brain-version]", e?.message || e); res.status(500).json({ error: "brain_version_failed" }); }
+});
+
+// Owner-gated relay to the hub's environment channel: the member secret lives server-side only,
+// so local sessions report readiness through this door instead of ever holding the secret.
+app.post("/api/admin/env-report", rateLimit(10), adminAuth, async (req, res) => {
+  try {
+    const s = bridgeSecret();
+    if (!s) return res.status(503).json({ error: "council_disabled" });
+    const payload = req.body && typeof req.body === "object" ? req.body : {};
+    const r = await fetch((process.env.COUNCIL_HUB || "https://architectscouncil.com") + "/api/env/task", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-bridge-secret": s },
+      body: JSON.stringify(payload),
+    });
+    const text = await r.text();
+    res.status(r.status).type("application/json").send(text.slice(0, 2000));
+  } catch (e: any) { console.error("[env-report]", e?.message || e); res.status(502).json({ error: "hub_unreachable" }); }
 });
 
 // Owner-gated security self-check (council-locked shape; booleans/tiers only, no secrets, no model names).
