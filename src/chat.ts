@@ -11,7 +11,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { search, parseReference, extractReference, getVerses, getBook, type SearchHit, type Lang } from "./canon.js";
 
 const CORPUS_LABEL: Record<Lang, string> = {
-  en: "Berean Standard Bible; KJV for the Apocrypha/deuterocanon",
+  en: "Berean Standard Bible; KJV for the Apocrypha/deuterocanon; R.H. Charles for 1 Enoch and Jubilees",
   fr: "Louis Segond 1910",
   es: "Reina Valera 1909",
 };
