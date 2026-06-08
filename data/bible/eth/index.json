@@ -1,0 +1,29 @@
+{
+  "translation": "CHARLES",
+  "translationName": "R.H. Charles (public domain)",
+  "language": "en",
+  "license": "Public Domain",
+  "source": "wikisource + pseudepigrapha.com (NNC)",
+  "canonGroup": "ethiopian",
+  "bookCount": 2,
+  "books": [
+    {
+      "id": "1EN",
+      "name": "1 Enoch",
+      "order": 81,
+      "testament": "ET",
+      "canonGroup": "ethiopian",
+      "numberOfChapters": 108,
+      "totalNumberOfVerses": 1057
+    },
+    {
+      "id": "JUB",
+      "name": "Jubilees",
+      "order": 82,
+      "testament": "ET",
+      "canonGroup": "ethiopian",
+      "numberOfChapters": 50,
+      "totalNumberOfVerses": 1306
+    }
+  ]
+}

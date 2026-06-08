@@ -102,9 +102,9 @@ addEventListener('resize',init);init();if(!R)draw();})();
 let BOOKS=[]; let cur={book:null,chapter:1};
 const LANGS=['en','fr','es'];
 const T={
-  en:{ot:'Old Testament',nt:'New Testament',ap:'Apocrypha · Deuterocanon',chapter:'Chapter',loading:'Loading the Word…',loading2:'Loading…',fail:'Could not load this chapter.',prev:'‹ Previous',next:'Next ›',books:'☰ Books',random:'Random',share:'Share',ask:'Ask the AI',copied:'Copied to clipboard 🕊️',readOn:'Read free on BibleVoice'},
-  fr:{ot:'Ancien Testament',nt:'Nouveau Testament',ap:'Apocryphes · Deutérocanon',chapter:'Chapitre',loading:'Chargement de la Parole…',loading2:'Chargement…',fail:'Impossible de charger ce chapitre.',prev:'‹ Précédent',next:'Suivant ›',books:'☰ Livres',random:'Au hasard',share:'Partager',ask:'Parler à l’IA',copied:'Copié 🕊️',readOn:'À lire gratuitement sur BibleVoice'},
-  es:{ot:'Antiguo Testamento',nt:'Nuevo Testamento',ap:'Apócrifos · Deuterocanon',chapter:'Capítulo',loading:'Cargando la Palabra…',loading2:'Cargando…',fail:'No se pudo cargar este capítulo.',prev:'‹ Anterior',next:'Siguiente ›',books:'☰ Libros',random:'Al azar',share:'Compartir',ask:'Habla con la IA',copied:'Copiado 🕊️',readOn:'Lee gratis en BibleVoice'}
+  en:{ot:'Old Testament',nt:'New Testament',ap:'Apocrypha · Deuterocanon',et:'Ethiopian Canon',chapter:'Chapter',loading:'Loading the Word…',loading2:'Loading…',fail:'Could not load this chapter.',prev:'‹ Previous',next:'Next ›',books:'☰ Books',random:'Random',share:'Share',ask:'Ask the AI',copied:'Copied to clipboard 🕊️',readOn:'Read free on BibleVoice'},
+  fr:{ot:'Ancien Testament',nt:'Nouveau Testament',ap:'Apocryphes · Deutérocanon',et:'Canon éthiopien',chapter:'Chapitre',loading:'Chargement de la Parole…',loading2:'Chargement…',fail:'Impossible de charger ce chapitre.',prev:'‹ Précédent',next:'Suivant ›',books:'☰ Livres',random:'Au hasard',share:'Partager',ask:'Parler à l’IA',copied:'Copié 🕊️',readOn:'À lire gratuitement sur BibleVoice'},
+  es:{ot:'Antiguo Testamento',nt:'Nuevo Testamento',ap:'Apócrifos · Deuterocanon',et:'Canon etíope',chapter:'Capítulo',loading:'Cargando la Palabra…',loading2:'Cargando…',fail:'No se pudo cargar este capítulo.',prev:'‹ Anterior',next:'Siguiente ›',books:'☰ Libros',random:'Al azar',share:'Compartir',ask:'Habla con la IA',copied:'Copiado 🕊️',readOn:'Lee gratis en BibleVoice'}
 };
 let LANG='en';
 const tr=()=>T[LANG]||T.en;
@@ -157,12 +157,12 @@ $('#langSel').onchange=async()=>{
 
 function buildIndex(){
   const t=tr();
-  const ot=BOOKS.filter(b=>b.testament==='OT'), nt=BOOKS.filter(b=>b.testament==='NT'), ap=BOOKS.filter(b=>b.testament==='AP');
+  const ot=BOOKS.filter(b=>b.testament==='OT'), nt=BOOKS.filter(b=>b.testament==='NT'), ap=BOOKS.filter(b=>b.testament==='AP'), et=BOOKS.filter(b=>b.testament==='ET');
   const sect=(ti,arr)=>arr.length?`<h3>${ti}</h3>`+arr.map(b=>{
     const chips=Array.from({length:b.numberOfChapters},(_,i)=>`<div class="chip" data-b="${b.id}" data-c="${i+1}">${i+1}</div>`).join('');
     return `<button class="book" data-book="${b.id}">${b.name}</button><div class="chaps" id="ch_${b.id}">${chips}</div>`;
   }).join(''):'';
-  side.innerHTML=sect(t.ot,ot)+sect(t.nt,nt)+sect(t.ap,ap);
+  side.innerHTML=sect(t.ot,ot)+sect(t.nt,nt)+sect(t.ap,ap)+sect(t.et,et);
   side.querySelectorAll('.book').forEach(el=>el.onclick=()=>toggleBook(el.dataset.book));
   side.querySelectorAll('.chip').forEach(el=>el.onclick=()=>{ cur={book:el.dataset.b,chapter:+el.dataset.c}; if(isMobile())closeSide(); load(); });
 }

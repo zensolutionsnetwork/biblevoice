@@ -13,7 +13,7 @@ const DATA_ROOT = resolve(__dirname, "../data/bible");
 
 export interface Verse { number: number; text: string; }
 export interface Chapter { number: number; verses: Verse[]; headings: { before: number; text: string }[]; audio: Record<string, string> | null; }
-export interface Book { id: string; name: string; title: string; order: number; testament: "OT" | "NT" | "AP"; canonGroup: string; numberOfChapters: number; totalNumberOfVerses: number; translation: { id: string; name: string; license: string; source: string }; chapters: Chapter[]; }
+export interface Book { id: string; name: string; title: string; order: number; testament: "OT" | "NT" | "AP" | "ET"; canonGroup: string; numberOfChapters: number; totalNumberOfVerses: number; translation: { id: string; name: string; license: string; source: string }; chapters: Chapter[]; }
 
 export type Lang = "en" | "fr" | "es";
 export const LANGS: Lang[] = ["en", "fr", "es"];
