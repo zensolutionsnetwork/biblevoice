@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { getIndex, getChapter, search, verseOfTheDay, pickLang } from "./canon.js";
 import { chat, type ChatMessage } from "./chat.js";
 import { readFileSync } from "node:fs";
-import { initDb, recordVisit, aiGate, recordAiCall, getBacklog, setBacklog, seedBacklogIfEmpty, getChronicle, setChronicle, outboxMarkPending, outboxAck, outboxAckedIds, brainChunkList, brainApply, brainSetState, brainGetState } from "./db.js";
+import { initDb, recordVisit, aiGate, recordAiCall, getBacklog, setBacklog, seedBacklogIfEmpty, getChronicle, setChronicle, outboxMarkPending, outboxAck, outboxAckedIds, brainChunkList, brainApply, brainSetState, brainGetState, recentBoots } from "./db.js";
 import { ensureCouncil, bridgeSecret, rejoinHub, architectReply, reviewProposal, brainSnapshot, DISPLAY_NAME, REVIEW_CAPABILITIES, COUNCIL_MODEL_TIER, outboxWithIds, computeBrainVersion, sha256Hex, V2_CONTRACT_VERSION } from "./council.js";
 import { adminAuth, verifyGoogleCredential, makeSessionToken, GOOGLE_CLIENT_ID } from "./admin.js";
 import { PUBLIC_MODEL_TIER } from "./chat.js";
@@ -318,6 +318,15 @@ app.get("/api/council/security-selfcheck", rateLimit(30), adminAuth, (_req, res)
     owner_auth_configured: !!(process.env.ADMIN_API_TOKEN || GOOGLE_CLIENT_ID),
     model_pinned: { public: PUBLIC_MODEL_TIER, council: COUNCIL_MODEL_TIER },
   });
+});
+
+// Owner-gated boot history (Nova's boot-stamp pattern, council 2026-06-11): the night-watch
+// reads this; any row with cycle:true is a container restart OUTSIDE a deploy — goes in the
+// handoff brief instead of staying invisible. Booleans/hashes only, no secrets.
+app.get("/api/council/boot-log", rateLimit(30), adminAuth, async (_req, res) => {
+  const boots = await recentBoots(10);
+  if (!boots) return res.json({ db: false, boots: [] });
+  res.json({ db: true, boots, cycles: boots.filter((b) => b.cycle).length });
 });
 
 // --- Super-admin panel (living backlog). BOTH reads and writes require auth

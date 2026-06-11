@@ -67,7 +67,13 @@ export async function chat(messages: ChatMessage[], lang: Lang = "en"): Promise<
   let goto: { bookId: string; chapter: number; ref: string } | null = null;
   if (lastUser) {
     const er = extractReference(lastUser.content, lang) || (lang !== "en" ? extractReference(lastUser.content) : null);
-    if (er) { const b = getBook(er.bookId, lang) || getBook(er.bookId); if (b) goto = { bookId: er.bookId, chapter: er.chapter, ref: `${b.name} ${er.chapter}` }; }
+    if (er) {
+      const b = getBook(er.bookId, lang) || getBook(er.bookId);
+      if (b) goto = { bookId: er.bookId, chapter: er.chapter, ref: `${b.name} ${er.chapter}` };
+      // Lint rule (council 2026-06-11): no no-op on a failed lookup without a logged reason.
+      // A ref that parsed but has no book is a canon-coverage gap (the 66-vs-82 goto class).
+      else console.warn(`[chat] extractReference matched "${er.bookId}" ${er.chapter} but getBook missed (lang=${lang}) — goto dropped`);
+    }
   }
 
   if (!client) {

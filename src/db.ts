@@ -72,7 +72,49 @@ export async function initDb(): Promise<void> {
     manifest jsonb,
     updated_at timestamptz
   );`);
+  // Boot-stamp (Nova's pattern, adopted at council 2026-06-11): one row per process start.
+  // Same deploy_sha + new boot_id = container cycle (OOM/preemption), not a deploy — closes
+  // the "restart outside a deploy is invisible" monitoring gap. session_fingerprint is a
+  // sha256 of SESSION_SECRET (never the secret itself) so a session-invalidation cause can
+  // be proven from the log rather than guessed.
+  await pool.query(`CREATE TABLE IF NOT EXISTS boot_log (
+    boot_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    started_at timestamptz NOT NULL DEFAULT now(),
+    deploy_sha text,
+    session_fingerprint text
+  );`);
+  await recordBoot();
   console.log("[db] ready");
+}
+
+// --- Boot-stamp (container-cycle detection) ---
+import crypto from "node:crypto";
+
+async function recordBoot(): Promise<void> {
+  if (!pool) return;
+  try {
+    const sha = process.env.RAILWAY_GIT_COMMIT_SHA || null;
+    const fp = process.env.ADMIN_SESSION_SECRET
+      ? crypto.createHash("sha256").update(process.env.ADMIN_SESSION_SECRET).digest("hex").slice(0, 16)
+      : null;
+    await pool.query(`INSERT INTO boot_log(deploy_sha, session_fingerprint) VALUES ($1, $2)`, [sha, fp]);
+    console.log("[boot] stamped", sha ? `sha=${sha.slice(0, 7)}` : "(no deploy sha)");
+  } catch (e: any) { console.warn("[boot] stamp failed:", e?.message || e); }
+}
+
+export interface BootRow { bootId: string; startedAt: string; deploySha: string | null; cycle: boolean }
+/** Last N boots, newest first; `cycle: true` = same deploy sha as the boot before it (container cycle, not a deploy). */
+export async function recentBoots(n = 10): Promise<BootRow[] | null> {
+  if (!pool) return null;
+  try {
+    const r = await pool.query(`SELECT boot_id, started_at, deploy_sha FROM boot_log ORDER BY started_at DESC LIMIT $1`, [Math.min(Math.max(n, 1), 50)]);
+    return r.rows.map((x: any, i: number) => ({
+      bootId: x.boot_id,
+      startedAt: x.started_at.toISOString(),
+      deploySha: x.deploy_sha,
+      cycle: i + 1 < r.rows.length && !!x.deploy_sha && r.rows[i + 1].deploy_sha === x.deploy_sha,
+    }));
+  } catch (e: any) { console.warn("[boot] read failed:", e?.message || e); return null; }
 }
 
 // --- Council v2 brain storage ---

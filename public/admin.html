@@ -30,20 +30,28 @@
 </head>
 <body>
 <div class="wrap">
-  <header>
+  <header id="hdr" hidden>
     <div class="logo">Bible<b>Voice</b> · Super-admin</div>
-    <div class="sub">📋 Living backlog — canonical copy, owner only. Sign in to view and edit.</div>
+    <div class="sub">📋 Living backlog — canonical copy, owner only.</div>
   </header>
 
+  <!-- GATE: the only thing visible before a server-validated owner sign-in -->
+  <div class="card" id="gate" style="max-width:420px;margin:18vh auto 0;text-align:center">
+    <div class="logo" style="font-size:22px;margin-bottom:6px">Bible<b>Voice</b></div>
+    <div class="meta" id="who" style="margin-bottom:14px">Owner sign-in required.</div>
+    <div id="gsi" style="display:flex;justify-content:center"></div>
+    <div class="meta" id="cfgNote" style="margin-top:10px"></div>
+  </div>
+
+  <div id="panel" hidden>
   <div class="card">
     <div class="row">
       <div>
-        <div class="k">Sign in</div>
-        <div class="meta" id="who">Not signed in — backlog is read-only.</div>
+        <div class="k">Session</div>
+        <div class="meta" id="who2">—</div>
       </div>
-      <div id="gsi"></div>
+      <button class="gold" id="signout" style="background:transparent;border:1px solid var(--line);color:var(--mut);font-weight:400">Sign out</button>
     </div>
-    <div class="meta" id="cfgNote" style="margin-top:8px"></div>
   </div>
 
   <div class="card">
@@ -87,6 +95,7 @@
     </div>
     <div class="meta" id="jmeta" style="margin-top:6px"></div>
   </div>
+  </div><!-- /panel -->
 
   <footer><a href="/">← biblevoice.net</a> · panel reserved for the project owner</footer>
 </div>
@@ -102,8 +111,15 @@
   var $ = function(id){ return document.getElementById(id); };
   function clearSession(){ token=''; email=''; localStorage.removeItem('bv_admin_token'); localStorage.removeItem('bv_admin_email'); }
 
+  // FULL-PAGE GATE (owner's rule: nothing visible before sign-in).
+  // The panel is revealed only after the server confirms the session (a stored
+  // token alone is not enough — it must answer 200 on an owner-gated endpoint).
   function setSigned(on){
-    $('who').textContent = on ? ('Signed in as ' + email) : 'Not signed in — sign in to view and edit the backlog.';
+    $('gate').hidden = on;
+    $('panel').hidden = !on;
+    $('hdr').hidden = !on;
+    $('who').textContent = on ? '' : 'Owner sign-in required.';
+    if (on) $('who2').textContent = 'Signed in as ' + email;
     $('content').disabled = !on;
     $('save').disabled = !on;
     $('loadInbox').disabled = !on;
@@ -111,8 +127,9 @@
     $('saveChronicle').disabled = !on;
     $('joinToken').disabled = !on;
     $('joinHub').disabled = !on;
-    if (!on) { $('content').value = ''; $('content').placeholder = 'Sign in with the owner account to view the backlog.'; $('bmeta').textContent = 'locked'; $('chronicle').value=''; $('chronicle').placeholder='Sign in to view the chronicle.'; $('cmeta').textContent='locked'; }
+    if (!on) { $('content').value = ''; $('bmeta').textContent = 'locked'; $('chronicle').value=''; $('cmeta').textContent='locked'; }
   }
+  $('signout') && ($('signout').onclick = function(){ clearSession(); setSigned(false); });
   function status(msg, cls){ var s=$('status'); s.textContent=msg||''; s.className=cls||''; }
 
   function loadBacklog(){
@@ -233,9 +250,21 @@
     })();
   });
 
-  setSigned(!!token);
-  loadBacklog();
-  loadChronicle();
+  // Boot: gate first, always. A stored token must be validated server-side
+  // before anything is revealed; 401 clears it and leaves the gate up.
+  setSigned(false);
+  if (token) {
+    fetch('/api/admin/backlog', { headers: { 'Authorization': 'Bearer ' + token } }).then(function(r){
+      if (r.status !== 200) { clearSession(); setSigned(false); return null; }
+      return r.json();
+    }).then(function(j){
+      if (!j) return;
+      setSigned(true);
+      $('content').value = j.content || '';
+      $('bmeta').textContent = j.updatedAt ? ('updated ' + new Date(j.updatedAt).toLocaleString() + (j.updatedBy ? ' by ' + j.updatedBy : '')) : (j.db === false ? 'no database connected' : 'never updated');
+      loadChronicle();
+    }).catch(function(){ /* network failure: stay gated */ });
+  }
 })();
 </script>
 </body>

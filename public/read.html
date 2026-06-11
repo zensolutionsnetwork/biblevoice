@@ -141,8 +141,16 @@ async function init(){
   const pb=(p.get('b')||'').toUpperCase(), pc=parseInt(p.get('c')||'',10);
   const saved=JSON.parse(localStorage.getItem('bv_read')||'null');
   if(pb && idxOf(pb)>=0){ cur={book:pb,chapter:pc>0?pc:1}; }
-  else if(saved && idxOf(saved.book)>=0){ cur=saved; }
-  else { cur={book:BOOKS[0].id,chapter:1}; }
+  else if(saved && idxOf(saved.book)>=0){
+    // Lint rule (council 2026-06-11): never swallow a failed lookup silently. A deep link
+    // whose book id misses the current set falls back — but says so, visibly and in the log.
+    if(pb){ console.warn('[read] deep-link book "'+pb+'" not in the '+LANG+' set — falling back to saved position'); toast(tr().fail); }
+    cur=saved;
+  }
+  else {
+    if(pb){ console.warn('[read] deep-link book "'+pb+'" not in the '+LANG+' set — falling back to first book'); toast(tr().fail); }
+    cur={book:BOOKS[0].id,chapter:1};
+  }
   load();
 }
 
