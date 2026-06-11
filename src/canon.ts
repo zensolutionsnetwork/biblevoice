@@ -29,15 +29,32 @@ const sets = new Map<Lang, CanonSet>();
 function load() {
   for (const dir of readdirSync(DATA_ROOT)) {
     let idx: any;
+    // Council 2026-06-11 meeting #2 (silent-swallow audit): distinguish "no index.json"
+    // (not a canon dir — skip is correct) from "index.json EXISTS but won't parse" (a
+    // corrupt canon dir — silently skipping would drop a whole translation without a
+    // word). Data ships in the image, so a parse failure means a bad build: fail the
+    // boot loudly and let the platform keep the previous deploy serving. A Scripture
+    // site that silently loses a canon is worse than one that refuses a bad build.
     try { idx = JSON.parse(readFileSync(resolve(DATA_ROOT, dir, "index.json"), "utf8")); }
-    catch { continue; } // not a canon dir
+    catch (e: any) {
+      if (e?.code === "ENOENT") continue; // not a canon dir
+      console.error(`[canon] CORRUPT index.json in data/bible/${dir} — refusing to boot without it:`, e?.message || e);
+      throw e;
+    }
     const lang = (idx.language || "en") as Lang;
     if (!sets.has(lang)) sets.set(lang, { books: new Map(), index: { language: lang, translations: [], bookCount: 0, books: [] }, nameToId: new Map() });
     const set = sets.get(lang)!;
     set.index.translations.push(idx.translation || dir);
     for (const f of readdirSync(resolve(DATA_ROOT, dir))) {
       if (f === "index.json" || !f.endsWith(".json")) continue;
-      const b = JSON.parse(readFileSync(resolve(DATA_ROOT, dir, f), "utf8")) as Book;
+      // A corrupt book file already failed the boot (unhandled throw) — keep the hard
+      // stop, but name the file so the bad build is diagnosable from the log.
+      let b: Book;
+      try { b = JSON.parse(readFileSync(resolve(DATA_ROOT, dir, f), "utf8")) as Book; }
+      catch (e: any) {
+        console.error(`[canon] CORRUPT book file data/bible/${dir}/${f} — refusing to boot:`, e?.message || e);
+        throw e;
+      }
       set.books.set(b.id, b);
     }
     set.index.books.push(...(idx.books || []));
