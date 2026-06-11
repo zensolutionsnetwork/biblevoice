@@ -290,6 +290,16 @@ app.post("/api/admin/council-rejoin", rateLimit(5), adminAuth, async (req, res) 
   res.status(result.ok ? 200 : 400).json(result);
 });
 
+// Owner-gated export of the member secret to the owner's own machine (the council v2 client
+// and local session rituals authenticate to the hub directly, mirroring Nova's local-file
+// pattern). Owner-only door; each access is logged.
+app.get("/api/admin/bridge-secret", rateLimit(5), adminAuth, (req: any, res) => {
+  const s = bridgeSecret();
+  if (!s) return res.status(503).json({ error: "council_disabled" });
+  console.log("[council] bridge secret exported via owner door by", req.adminEmail);
+  res.json({ secret: s });
+});
+
 // Owner-gated security self-check (council-locked shape; booleans/tiers only, no secrets, no model names).
 app.get("/api/council/security-selfcheck", rateLimit(30), adminAuth, (_req, res) => {
   let db_public_reachable = false;
