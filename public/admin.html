@@ -58,6 +58,18 @@
     </div>
   </div>
 
+  <div class="card">
+    <div class="row" style="margin-bottom:10px">
+      <div class="k">📨 Hub inbox (council)</div>
+      <div class="meta" id="imeta">sign in, then load</div>
+    </div>
+    <pre id="inbox" style="background:#fffdf6;border:1px solid var(--line);border-radius:10px;padding:14px;font:12px/1.6 ui-monospace,Consolas,monospace;white-space:pre-wrap;word-break:break-word;max-height:50vh;overflow:auto;margin:0">—</pre>
+    <div class="row" style="margin-top:10px">
+      <div></div>
+      <button class="gold" id="loadInbox" disabled>Load inbox</button>
+    </div>
+  </div>
+
   <footer><a href="/">← biblevoice.net</a> · panel reserved for the project owner</footer>
 </div>
 
@@ -72,6 +84,7 @@
     $('who').textContent = on ? ('Signed in as ' + email) : 'Not signed in — sign in to view and edit the backlog.';
     $('content').disabled = !on;
     $('save').disabled = !on;
+    $('loadInbox').disabled = !on;
     if (!on) { $('content').value = ''; $('content').placeholder = 'Sign in with the owner account to view the backlog.'; $('bmeta').textContent = 'locked'; }
   }
   function status(msg, cls){ var s=$('status'); s.textContent=msg||''; s.className=cls||''; }
@@ -103,6 +116,20 @@
       $('bmeta').textContent = 'updated ' + new Date(j.updatedAt).toLocaleString() + ' by ' + (j.updatedBy || '');
       status('Saved ✓','ok');
     }).catch(function(){ status('Save failed (network).','err'); });
+  };
+
+  $('loadInbox').onclick = function(){
+    $('imeta').textContent = 'loading…';
+    fetch('/api/admin/env-tasks', { headers: { 'Authorization': 'Bearer ' + token } }).then(function(r){
+      if (r.status === 401) { token=''; sessionStorage.removeItem('bv_admin_token'); setSigned(false); $('imeta').textContent='session expired'; return null; }
+      return r.text().then(function(t){ return { status: r.status, text: t }; });
+    }).then(function(x){
+      if (!x) return;
+      var out = x.text;
+      try { out = JSON.stringify(JSON.parse(x.text), null, 2); } catch(e){}
+      $('inbox').textContent = out || '(empty)';
+      $('imeta').textContent = 'HTTP ' + x.status + ' · ' + new Date().toLocaleString();
+    }).catch(function(){ $('imeta').textContent = 'failed (network)'; });
   };
 
   function onCredential(resp){

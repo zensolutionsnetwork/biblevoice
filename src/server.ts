@@ -258,6 +258,20 @@ app.post("/api/admin/env-report", rateLimit(10), adminAuth, async (req, res) => 
   } catch (e: any) { console.error("[env-report]", e?.message || e); res.status(502).json({ error: "hub_unreachable" }); }
 });
 
+// Owner-gated READ relay for the hub environment channel (the inbox): lists tasks/messages
+// addressed to this member. Same doctrine as env-report — the member secret never leaves the server.
+app.get("/api/admin/env-tasks", rateLimit(30), adminAuth, async (_req, res) => {
+  try {
+    const s = bridgeSecret();
+    if (!s) return res.status(503).json({ error: "council_disabled" });
+    const r = await fetch((process.env.COUNCIL_HUB || "https://architectscouncil.com") + "/api/env/tasks?for=logos", {
+      headers: { "x-bridge-secret": s },
+    });
+    const text = await r.text();
+    res.status(r.status).type("application/json").send(text.slice(0, 500000));
+  } catch (e: any) { console.error("[env-tasks]", e?.message || e); res.status(502).json({ error: "hub_unreachable" }); }
+});
+
 // Owner-gated security self-check (council-locked shape; booleans/tiers only, no secrets, no model names).
 app.get("/api/council/security-selfcheck", rateLimit(30), adminAuth, (_req, res) => {
   let db_public_reachable = false;
