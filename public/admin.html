@@ -60,6 +60,18 @@
 
   <div class="card">
     <div class="row" style="margin-bottom:10px">
+      <div class="k">📖 Chronicle</div>
+      <div class="meta" id="cmeta">loading…</div>
+    </div>
+    <textarea id="chronicle" disabled placeholder="Loading chronicle…" style="min-height:40vh"></textarea>
+    <div class="row" style="margin-top:10px">
+      <div id="cstatus"></div>
+      <button class="gold" id="saveChronicle" disabled>Save chronicle</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="row" style="margin-bottom:10px">
       <div class="k">📨 Hub inbox (council)</div>
       <div class="meta" id="imeta">sign in, then load</div>
     </div>
@@ -76,23 +88,29 @@
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 (function(){
-  var token = sessionStorage.getItem('bv_admin_token') || '';
-  var email = sessionStorage.getItem('bv_admin_email') || '';
+  // localStorage (not sessionStorage): the owner panel stays signed in across tabs and
+  // browser restarts, for the life of the session token. Migrate any old sessionStorage value.
+  var token = localStorage.getItem('bv_admin_token') || sessionStorage.getItem('bv_admin_token') || '';
+  var email = localStorage.getItem('bv_admin_email') || sessionStorage.getItem('bv_admin_email') || '';
+  sessionStorage.removeItem('bv_admin_token'); sessionStorage.removeItem('bv_admin_email');
   var $ = function(id){ return document.getElementById(id); };
+  function clearSession(){ token=''; email=''; localStorage.removeItem('bv_admin_token'); localStorage.removeItem('bv_admin_email'); }
 
   function setSigned(on){
     $('who').textContent = on ? ('Signed in as ' + email) : 'Not signed in — sign in to view and edit the backlog.';
     $('content').disabled = !on;
     $('save').disabled = !on;
     $('loadInbox').disabled = !on;
-    if (!on) { $('content').value = ''; $('content').placeholder = 'Sign in with the owner account to view the backlog.'; $('bmeta').textContent = 'locked'; }
+    $('chronicle').disabled = !on;
+    $('saveChronicle').disabled = !on;
+    if (!on) { $('content').value = ''; $('content').placeholder = 'Sign in with the owner account to view the backlog.'; $('bmeta').textContent = 'locked'; $('chronicle').value=''; $('chronicle').placeholder='Sign in to view the chronicle.'; $('cmeta').textContent='locked'; }
   }
   function status(msg, cls){ var s=$('status'); s.textContent=msg||''; s.className=cls||''; }
 
   function loadBacklog(){
     if (!token) return;
     fetch('/api/admin/backlog', { headers: { 'Authorization': 'Bearer ' + token } }).then(function(r){
-      if (r.status === 401) { token=''; email=''; sessionStorage.removeItem('bv_admin_token'); sessionStorage.removeItem('bv_admin_email'); setSigned(false); return null; }
+      if (r.status === 401) { clearSession(); setSigned(false); return null; }
       return r.json();
     }).then(function(j){
       if (!j) return;
@@ -101,6 +119,35 @@
     }).catch(function(){ $('bmeta').textContent = 'failed to load'; });
   }
 
+  function loadChronicle(){
+    if (!token) return;
+    fetch('/api/admin/chronicle', { headers: { 'Authorization': 'Bearer ' + token } }).then(function(r){
+      if (r.status === 401) { clearSession(); setSigned(false); return null; }
+      return r.json();
+    }).then(function(j){
+      if (!j) return;
+      $('chronicle').value = j.content || '';
+      $('cmeta').textContent = j.updatedAt ? ('updated ' + new Date(j.updatedAt).toLocaleString() + (j.updatedBy ? ' by ' + j.updatedBy : '')) : (j.db === false ? 'no database connected' : 'empty — waiting for the first chapter');
+    }).catch(function(){ $('cmeta').textContent = 'failed to load'; });
+  }
+
+  $('saveChronicle').onclick = function(){
+    var s=$('cstatus'); s.textContent='Saving…'; s.className='';
+    fetch('/api/admin/chronicle', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + token },
+      body: JSON.stringify({ content: $('chronicle').value })
+    }).then(function(r){
+      if (r.status === 401) { clearSession(); setSigned(false); s.textContent='Session expired — sign in again.'; s.className='err'; return null; }
+      return r.json();
+    }).then(function(j){
+      if (!j) return;
+      if (j.error) { s.textContent='Save failed: ' + j.error; s.className='err'; return; }
+      $('cmeta').textContent = 'updated ' + new Date(j.updatedAt).toLocaleString() + ' by ' + (j.updatedBy || '');
+      s.textContent='Saved ✓'; s.className='ok';
+    }).catch(function(){ s.textContent='Save failed (network).'; s.className='err'; });
+  };
+
   $('save').onclick = function(){
     status('Saving…');
     fetch('/api/admin/backlog', {
@@ -108,7 +155,7 @@
       headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + token },
       body: JSON.stringify({ content: $('content').value })
     }).then(function(r){
-      if (r.status === 401) { token=''; sessionStorage.removeItem('bv_admin_token'); setSigned(false); status('Session expired — sign in again.','err'); return null; }
+      if (r.status === 401) { clearSession(); setSigned(false); status('Session expired — sign in again.','err'); return null; }
       return r.json();
     }).then(function(j){
       if (!j) return;
@@ -121,7 +168,7 @@
   $('loadInbox').onclick = function(){
     $('imeta').textContent = 'loading…';
     fetch('/api/admin/env-tasks', { headers: { 'Authorization': 'Bearer ' + token } }).then(function(r){
-      if (r.status === 401) { token=''; sessionStorage.removeItem('bv_admin_token'); setSigned(false); $('imeta').textContent='session expired'; return null; }
+      if (r.status === 401) { clearSession(); setSigned(false); $('imeta').textContent='session expired'; return null; }
       return r.text().then(function(t){ return { status: r.status, text: t }; });
     }).then(function(x){
       if (!x) return;
@@ -139,10 +186,11 @@
     }).then(function(r){ return r.ok ? r.json() : null; }).then(function(j){
       if (!j || !j.token) { status('Sign-in refused — only the owner account may edit.','err'); return; }
       token = j.token; email = j.email;
-      sessionStorage.setItem('bv_admin_token', token);
-      sessionStorage.setItem('bv_admin_email', email);
+      localStorage.setItem('bv_admin_token', token);
+      localStorage.setItem('bv_admin_email', email);
       setSigned(true); status('Signed in ✓','ok');
       loadBacklog();
+      loadChronicle();
     }).catch(function(){ status('Sign-in failed.','err'); });
   }
 
@@ -162,6 +210,7 @@
 
   setSigned(!!token);
   loadBacklog();
+  loadChronicle();
 })();
 </script>
 </body>

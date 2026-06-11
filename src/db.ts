@@ -39,6 +39,14 @@ export async function initDb(): Promise<void> {
     updated_at timestamptz NOT NULL DEFAULT now(),
     updated_by text
   );`);
+  // The CHRONICLE — the family/company story Logos keeps as chronicler. Canonical copy
+  // lives HERE (online, owner-only panel + council meetings), never in the public repo.
+  await pool.query(`CREATE TABLE IF NOT EXISTS admin_chronicle (
+    id int PRIMARY KEY DEFAULT 1,
+    content text NOT NULL DEFAULT '',
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    updated_by text
+  );`);
   // Settled council DDL (2026-06-07): composite PK, partial index on pending,
   // idempotent insert; hub owns retention — no member-side sweep.
   await pool.query(`CREATE TABLE IF NOT EXISTS outbox_delivery (
@@ -175,6 +183,26 @@ export async function seedBacklogIfEmpty(content: string): Promise<void> {
     await setBacklog(content, "seed:BACKLOG.md");
     console.log("[db] backlog seeded from BACKLOG.md");
   } catch (e: any) { console.warn("[db] backlog seed failed:", e?.message || e); }
+}
+
+// --- The Chronicle (canonical copy in DB; owner panel at /admin; presented at council meetings) ---
+export async function getChronicle(): Promise<BacklogRow | null> {
+  if (!pool) return null;
+  try {
+    const r = await pool.query(`SELECT content, updated_at, updated_by FROM admin_chronicle WHERE id = 1`);
+    if (!r.rows[0]) return null;
+    return { content: r.rows[0].content, updatedAt: r.rows[0].updated_at.toISOString(), updatedBy: r.rows[0].updated_by };
+  } catch { return null; }
+}
+
+export async function setChronicle(content: string, updatedBy: string): Promise<BacklogRow | null> {
+  if (!pool) return null;
+  await pool.query(
+    `INSERT INTO admin_chronicle(id, content, updated_at, updated_by) VALUES (1, $1, now(), $2)
+     ON CONFLICT (id) DO UPDATE SET content = EXCLUDED.content, updated_at = now(), updated_by = EXCLUDED.updated_by`,
+    [content, updatedBy]
+  );
+  return getChronicle();
 }
 
 export async function getCouncilState(): Promise<{ secret?: string; member_id?: string } | null> {

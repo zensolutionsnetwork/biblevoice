@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { getIndex, getChapter, search, verseOfTheDay, pickLang } from "./canon.js";
 import { chat, type ChatMessage } from "./chat.js";
 import { readFileSync } from "node:fs";
-import { initDb, recordVisit, aiGate, recordAiCall, getBacklog, setBacklog, seedBacklogIfEmpty, outboxMarkPending, outboxAck, outboxAckedIds, brainChunkList, brainApply, brainSetState, brainGetState } from "./db.js";
+import { initDb, recordVisit, aiGate, recordAiCall, getBacklog, setBacklog, seedBacklogIfEmpty, getChronicle, setChronicle, outboxMarkPending, outboxAck, outboxAckedIds, brainChunkList, brainApply, brainSetState, brainGetState } from "./db.js";
 import { ensureCouncil, bridgeSecret, architectReply, reviewProposal, brainSnapshot, DISPLAY_NAME, REVIEW_CAPABILITIES, COUNCIL_MODEL_TIER, outboxWithIds, computeBrainVersion, sha256Hex, V2_CONTRACT_VERSION } from "./council.js";
 import { adminAuth, verifyGoogleCredential, makeSessionToken, GOOGLE_CLIENT_ID } from "./admin.js";
 import { PUBLIC_MODEL_TIER } from "./chat.js";
@@ -138,6 +138,13 @@ app.post("/api/bridge/ask", bridgeAuth, async (req, res) => {
   catch (e: any) { console.error("[bridge/ask]", e?.message || e); res.status(500).json({ error: "ask_failed" }); }
 });
 app.get("/api/bridge/brain", bridgeAuth, (_req, res) => res.json({ project: "biblevoice", brain: brainSnapshot(), updatedAt: new Date().toISOString() }));
+// CHRONICLER ritual: the full family chronicle, readable by council members (member-secret auth)
+// so the whole story can be displayed to everyone at each meeting.
+app.get("/api/bridge/chronicle", bridgeAuth, async (_req, res) => {
+  const row = await getChronicle();
+  if (!row) return res.status(503).json({ error: "no_database" });
+  res.json({ project: "biblevoice", chronicle: row.content, updatedAt: row.updatedAt });
+});
 app.post("/api/bridge/review", bridgeAuth, async (req, res) => {
   // Contract v1.2: accepts full AskPayload { from, proposal: string|object, history[] };
   // legacy { title, summary, details } bodies are normalized into a proposal string.
@@ -310,6 +317,19 @@ app.post("/api/admin/backlog", rateLimit(30), adminAuth, async (req: any, res) =
   const content = String(req.body?.content ?? "");
   if (content.length > 500_000) return res.status(413).json({ error: "too_large" });
   const row = await setBacklog(content, req.adminEmail);
+  if (!row) return res.status(503).json({ error: "no_database" });
+  res.json(row);
+});
+// --- The Chronicle (owner-only; canonical copy in DB, never in the public repo). ---
+app.get("/api/admin/chronicle", rateLimit(60), adminAuth, async (_req, res) => {
+  const row = await getChronicle();
+  if (!row) return res.json({ content: "", updatedAt: null, updatedBy: null, db: false });
+  res.json(row);
+});
+app.post("/api/admin/chronicle", rateLimit(30), adminAuth, async (req: any, res) => {
+  const content = String(req.body?.content ?? "");
+  if (content.length > 900_000) return res.status(413).json({ error: "too_large" });
+  const row = await setChronicle(content, req.adminEmail);
   if (!row) return res.status(503).json({ error: "no_database" });
   res.json(row);
 });

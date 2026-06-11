@@ -21,7 +21,9 @@ import crypto from "node:crypto";
 export const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || "").toLowerCase();
 export const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "";
 const SESSION_SECRET = process.env.ADMIN_SESSION_SECRET || crypto.randomBytes(32).toString("hex");
-const SESSION_HOURS = Number(process.env.ADMIN_SESSION_HOURS || 12);
+// 30-day sessions by default (owner request: the panel should stay signed in on his browser).
+// NOTE: sessions only survive redeploys if ADMIN_SESSION_SECRET is set in env — set it in Railway.
+const SESSION_HOURS = Number(process.env.ADMIN_SESSION_HOURS || 720);
 
 function sign(payload: string): string {
   return crypto.createHmac("sha256", SESSION_SECRET).update(payload).digest("hex");
