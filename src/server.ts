@@ -7,7 +7,7 @@ import { getIndex, getChapter, search, verseOfTheDay, pickLang } from "./canon.j
 import { chat, type ChatMessage } from "./chat.js";
 import { readFileSync } from "node:fs";
 import { initDb, recordVisit, aiGate, recordAiCall, getBacklog, setBacklog, seedBacklogIfEmpty, getChronicle, setChronicle, outboxMarkPending, outboxAck, outboxAckedIds, brainChunkList, brainApply, brainSetState, brainGetState } from "./db.js";
-import { ensureCouncil, bridgeSecret, architectReply, reviewProposal, brainSnapshot, DISPLAY_NAME, REVIEW_CAPABILITIES, COUNCIL_MODEL_TIER, outboxWithIds, computeBrainVersion, sha256Hex, V2_CONTRACT_VERSION } from "./council.js";
+import { ensureCouncil, bridgeSecret, rejoinHub, architectReply, reviewProposal, brainSnapshot, DISPLAY_NAME, REVIEW_CAPABILITIES, COUNCIL_MODEL_TIER, outboxWithIds, computeBrainVersion, sha256Hex, V2_CONTRACT_VERSION } from "./council.js";
 import { adminAuth, verifyGoogleCredential, makeSessionToken, GOOGLE_CLIENT_ID } from "./admin.js";
 import { PUBLIC_MODEL_TIER } from "./chat.js";
 
@@ -281,6 +281,13 @@ app.get("/api/admin/env-tasks", rateLimit(30), adminAuth, async (_req, res) => {
     try { body = JSON.parse(text); } catch { /* hub sent non-JSON — pass through as text */ }
     res.json({ hubStatus: r.status, body });
   } catch (e: any) { console.error("[env-tasks]", e?.message || e); res.json({ hubStatus: 0, body: { error: "hub_unreachable" } }); }
+});
+
+// Owner-gated re-join after a hub rebuild: takes a fresh one-time join token, rotates the
+// member secret server-side, re-registers. The token is used once and never stored.
+app.post("/api/admin/council-rejoin", rateLimit(5), adminAuth, async (req, res) => {
+  const result = await rejoinHub(String(req.body?.joinToken || ""));
+  res.status(result.ok ? 200 : 400).json(result);
 });
 
 // Owner-gated security self-check (council-locked shape; booleans/tiers only, no secrets, no model names).

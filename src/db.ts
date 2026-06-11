@@ -217,6 +217,11 @@ export async function setCouncilRegistered(memberId: string): Promise<void> {
   if (!pool) return;
   try { await pool.query(`UPDATE council_state SET member_id = $1, registered_at = now() WHERE id = 1`, [memberId]); } catch {}
 }
+/** Forget a stale hub registration (e.g. after the hub was rebuilt) so a fresh join can run. */
+export async function clearCouncilRegistration(): Promise<void> {
+  if (!pool) return;
+  try { await pool.query(`UPDATE council_state SET member_id = NULL, registered_at = NULL WHERE id = 1`); } catch {}
+}
 
 // AI usage safety limits (tunable via env). Protects the shared credit pool.
 const AI_DAILY_PER_USER = Number(process.env.AI_DAILY_PER_USER || 50);   // per device, per 24h

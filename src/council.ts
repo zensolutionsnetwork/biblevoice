@@ -12,7 +12,7 @@
  */
 import crypto from "node:crypto";
 import Anthropic from "@anthropic-ai/sdk";
-import { getCouncilState, setCouncilSecret, setCouncilRegistered, brainGetContent, getChronicle } from "./db.js";
+import { getCouncilState, setCouncilSecret, setCouncilRegistered, clearCouncilRegistration, brainGetContent, getChronicle } from "./db.js";
 import { search } from "./canon.js";
 
 // --- Council v2 protocol canon (contract 2.0-draft1, reimplemented byte-for-byte per spec) ---
@@ -72,6 +72,43 @@ export async function ensureCouncil(): Promise<void> {
     console.log("[council] already registered, member_id:", st.member_id);
   } else {
     console.log("[council] secret ready; set COUNCIL_JOIN_TOKEN to register with the hub.");
+  }
+}
+
+/**
+ * Re-join a rebuilt hub with a fresh one-time join token (owner-initiated via the admin panel).
+ * Rotates the member secret (the old one is assumed unknown to the new hub), clears the stale
+ * registration, and registers anew. The secret itself never appears in any response or log.
+ */
+export async function rejoinHub(joinToken: string): Promise<{ ok: boolean; memberId?: string; status?: number; error?: string }> {
+  if (!councilEnabled()) return { ok: false, error: "council_disabled" };
+  if (!joinToken || joinToken.length < 8 || joinToken.length > 512) return { ok: false, error: "bad_token" };
+  if (!process.env.BRIDGE_SECRET) {
+    SECRET = crypto.randomBytes(32).toString("hex");
+    await setCouncilSecret(SECRET);
+  }
+  await clearCouncilRegistration();
+  try {
+    const res = await fetch(HUB + "/api/council/register", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: "biblevoice", base_url: "https://biblevoice.net", owner_email: process.env.OWNER_EMAIL || "info@zen-ai.net",
+        secret: SECRET,
+        rules: "Open-trust founding member. Shares published brain + dialogue. Teaches scripture-/voice-product architecture; wants to learn platform, council, and growth engineering. Preserves BibleVoice's Scripture guardrails at all cost.",
+        join_token: joinToken,
+      }),
+    });
+    const j: any = await res.json().catch(() => ({}));
+    if (res.ok && j.member_id) {
+      await setCouncilRegistered(String(j.member_id));
+      console.log("[council] re-registered, member_id:", j.member_id);
+      return { ok: true, memberId: String(j.member_id) };
+    }
+    console.warn("[council] rejoin failed:", res.status, JSON.stringify(j).slice(0, 200));
+    return { ok: false, status: res.status, error: j?.error || "register_failed" };
+  } catch (e: any) {
+    console.warn("[council] rejoin error:", e?.message || e);
+    return { ok: false, error: "hub_unreachable" };
   }
 }
 

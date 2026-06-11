@@ -80,6 +80,12 @@
       <div></div>
       <button class="gold" id="loadInbox" disabled>Load inbox</button>
     </div>
+    <div class="row" style="margin-top:10px">
+      <input id="joinToken" type="password" placeholder="One-time join token from Kairos" autocomplete="off"
+        style="flex:1;min-width:220px;background:#fffdf6;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font:13px ui-monospace,Consolas,monospace;color:var(--ink)" disabled />
+      <button class="gold" id="joinHub" disabled>Join hub</button>
+    </div>
+    <div class="meta" id="jmeta" style="margin-top:6px"></div>
   </div>
 
   <footer><a href="/">← biblevoice.net</a> · panel reserved for the project owner</footer>
@@ -103,6 +109,8 @@
     $('loadInbox').disabled = !on;
     $('chronicle').disabled = !on;
     $('saveChronicle').disabled = !on;
+    $('joinToken').disabled = !on;
+    $('joinHub').disabled = !on;
     if (!on) { $('content').value = ''; $('content').placeholder = 'Sign in with the owner account to view the backlog.'; $('bmeta').textContent = 'locked'; $('chronicle').value=''; $('chronicle').placeholder='Sign in to view the chronicle.'; $('cmeta').textContent='locked'; }
   }
   function status(msg, cls){ var s=$('status'); s.textContent=msg||''; s.className=cls||''; }
@@ -177,6 +185,23 @@
       $('inbox').textContent = JSON.stringify(j.body, null, 2) || '(empty)';
       $('imeta').textContent = 'hub HTTP ' + j.hubStatus + ' · ' + new Date().toLocaleString();
     }).catch(function(){ $('imeta').textContent = 'failed (network)'; });
+  };
+
+  $('joinHub').onclick = function(){
+    var tok = $('joinToken').value.trim();
+    if (!tok) { $('jmeta').textContent = 'paste the join token first'; return; }
+    $('jmeta').textContent = 'joining…';
+    fetch('/api/admin/council-rejoin', {
+      method:'POST', headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + token },
+      body: JSON.stringify({ joinToken: tok })
+    }).then(function(r){
+      if (r.status === 401) { clearSession(); setSigned(false); $('jmeta').textContent='session expired'; return null; }
+      return r.json();
+    }).then(function(j){
+      if (!j) return;
+      $('joinToken').value = '';
+      $('jmeta').textContent = j.ok ? ('joined ✓ member_id: ' + j.memberId) : ('join failed: ' + (j.error || '?') + (j.status ? ' (hub HTTP ' + j.status + ')' : ''));
+    }).catch(function(){ $('jmeta').textContent = 'failed (network)'; });
   };
 
   function onCredential(resp){
