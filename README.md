@@ -33,4 +33,7 @@ Without an API key the site still runs and returns relevant verses (demo mode); 
 - `POST /api/chat` — `{ messages: [{role,content}] }`
 
 ## Guardrails
-Scripture-grounded and cited; points to Jesus and never poses as the Holy Spirit; gracious across traditions; gentle with anyone in crisis; honest that it's an AI tool. See `src/chat.ts`.
+Scripture-grounded and cited; points to Jesus and never poses as the Holy Spirit; gracious across traditions; gentle with anyone in crisis; honest that it's an AI tool. See `src/chat.ts`. These guardrails are intentional and are never to be weakened.
+
+## Security posture (defensive only)
+This is a free public Bible website, and it is hardened the way any responsible public web app should be. **Every security measure in this repo is defensive and applies only to our own infrastructure**: auth on the owner's admin endpoints, rate limits and input caps to protect our server and our paid AI credits from abuse, standard browser security headers (HSTS/CSP/etc.), an internal-only database, authenticated channels between the owner's own services, and a pre-push scan that blocks *our own* commits if they would accidentally publish credentials or private files. There is no offensive tooling here — nothing that probes, exploits, or targets anyone else's systems — and there never will be.

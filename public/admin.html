@@ -127,7 +127,7 @@
     }).then(function(j){
       if (!j) return;
       $('chronicle').value = j.content || '';
-      $('cmeta').textContent = j.updatedAt ? ('updated ' + new Date(j.updatedAt).toLocaleString() + (j.updatedBy ? ' by ' + j.updatedBy : '')) : (j.db === false ? 'no database connected' : 'empty — waiting for the first chapter');
+      $('cmeta').textContent = j.updatedAt ? ('updated ' + new Date(j.updatedAt).toLocaleString() + (j.updatedBy ? ' by ' + j.updatedBy : '')) : 'empty — waiting for the first chapter';
     }).catch(function(){ $('cmeta').textContent = 'failed to load'; });
   }
 
@@ -168,14 +168,14 @@
   $('loadInbox').onclick = function(){
     $('imeta').textContent = 'loading…';
     fetch('/api/admin/env-tasks', { headers: { 'Authorization': 'Bearer ' + token } }).then(function(r){
+      // A 401 HERE is our own server refusing the owner session. The hub's answer
+      // (whatever it is) arrives inside a 200 as {hubStatus, body} and must never log us out.
       if (r.status === 401) { clearSession(); setSigned(false); $('imeta').textContent='session expired'; return null; }
-      return r.text().then(function(t){ return { status: r.status, text: t }; });
-    }).then(function(x){
-      if (!x) return;
-      var out = x.text;
-      try { out = JSON.stringify(JSON.parse(x.text), null, 2); } catch(e){}
-      $('inbox').textContent = out || '(empty)';
-      $('imeta').textContent = 'HTTP ' + x.status + ' · ' + new Date().toLocaleString();
+      return r.json();
+    }).then(function(j){
+      if (!j) return;
+      $('inbox').textContent = JSON.stringify(j.body, null, 2) || '(empty)';
+      $('imeta').textContent = 'hub HTTP ' + j.hubStatus + ' · ' + new Date().toLocaleString();
     }).catch(function(){ $('imeta').textContent = 'failed (network)'; });
   };
 

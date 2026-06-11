@@ -267,16 +267,20 @@ app.post("/api/admin/env-report", rateLimit(10), adminAuth, async (req, res) => 
 
 // Owner-gated READ relay for the hub environment channel (the inbox): lists tasks/messages
 // addressed to this member. Same doctrine as env-report — the member secret never leaves the server.
+// Always answers 200 locally with {hubStatus, body} so the panel can tell "owner session invalid"
+// (a real 401 from adminAuth) apart from "the hub said no" (hubStatus inside a 200).
 app.get("/api/admin/env-tasks", rateLimit(30), adminAuth, async (_req, res) => {
   try {
     const s = bridgeSecret();
-    if (!s) return res.status(503).json({ error: "council_disabled" });
+    if (!s) return res.json({ hubStatus: 0, body: { error: "council_disabled_no_secret" } });
     const r = await fetch((process.env.COUNCIL_HUB || "https://architectscouncil.com") + "/api/env/tasks?for=logos", {
       headers: { "x-bridge-secret": s },
     });
-    const text = await r.text();
-    res.status(r.status).type("application/json").send(text.slice(0, 500000));
-  } catch (e: any) { console.error("[env-tasks]", e?.message || e); res.status(502).json({ error: "hub_unreachable" }); }
+    const text = (await r.text()).slice(0, 500000);
+    let body: unknown = text;
+    try { body = JSON.parse(text); } catch { /* hub sent non-JSON — pass through as text */ }
+    res.json({ hubStatus: r.status, body });
+  } catch (e: any) { console.error("[env-tasks]", e?.message || e); res.json({ hubStatus: 0, body: { error: "hub_unreachable" } }); }
 });
 
 // Owner-gated security self-check (council-locked shape; booleans/tiers only, no secrets, no model names).

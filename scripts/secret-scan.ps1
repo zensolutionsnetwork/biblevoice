@@ -1,4 +1,6 @@
 # secret-scan.ps1 - privacy/secret gate run before every git push (the deploy .bat calls this).
+# DEFENSIVE TOOL: scans OUR OWN outgoing commits so we never accidentally publish our own
+# credentials or private files to this public repo. It touches nothing outside this checkout.
 # Scans exactly what git would publish: tracked files + untracked files NOT covered by .gitignore.
 # Exit 0 = clean, exit 1 = BLOCKED (findings printed; matched values never echoed).
 # Owner's rule after the backlog leak of 2026-06-06: internal state never rides along with public code.
