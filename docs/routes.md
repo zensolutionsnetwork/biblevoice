@@ -49,3 +49,12 @@ carry `adminAuth` or `bridgeAuth`).
 | GET | `/api/admin/bridge-secret` (owner door; accesses logged) |
 | GET | `/api/council/security-selfcheck` |
 | GET | `/api/council/boot-log` (boot-stamp history; cycle = restart outside a deploy) |
+
+---
+
+*Transcript hash verification: the council-jcs-1.0 spec lives in the hub repo
+(`architect-council/docs/CANONICALIZATION.md`). Hash = sha256 over the canonical
+serialization of `projection` from `GET /api/meeting/:id/transcript` — verified
+2026-06-11 on both meetings. Not mirrored here: the doc's golden-vector hash trips
+our secret-scan gate, and `docs/` is rightly outside the fixture-exemption path
+contract (`^(test/|fixtures/)`). The gate wins.*
