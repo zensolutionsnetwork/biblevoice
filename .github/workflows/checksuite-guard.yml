@@ -1,0 +1,56 @@
+# Guard against the Railway "Wait for CI" stall (root-caused 2026-06-09):
+# GitHub auto-creates an EMPTY check suite for any installed app with checks:write
+# (e.g. "Railway App", app_id 73253). That suite stays "queued" forever, and
+# Railway's Wait-for-CI waits on ALL suites -> 10-25 min deploy stalls.
+# Fix applied: PATCH /repos/{repo}/check-suites/preferences auto_trigger_checks
+# {app_id:73253, setting:false}. Re-apply with fix-railway-checksuite.ps1 (in
+# C:\Users\MatPa\Documents\GitHub\) if this guard ever fails.
+# This workflow scans recent commits daily and FAILS (-> email notification)
+# if any non-Actions check suite is stuck incomplete, i.e. the problem is back
+# (Railway app reinstalled, repo transferred, or a new checks:write app added).
+name: checksuite-guard
+on:
+  schedule:
+    - cron: "0 11 * * *" # daily 11:00 UTC (~7:00 Montreal)
+  workflow_dispatch:
+
+permissions:
+  checks: read
+  contents: read
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Scan recent commits for stuck non-Actions check suites
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          bad=0
+          now=$(date -u +%s)
+          for sha in $(curl -sf -H "Authorization: Bearer $GH_TOKEN" \
+              "https://api.github.com/repos/$REPO/commits?per_page=5" \
+              | jq -r '.[].sha'); do
+            suites=$(curl -sf -H "Authorization: Bearer $GH_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/$REPO/commits/$sha/check-suites")
+            # FIX_EPOCH: suites created before the 2026-06-09 20:00 UTC preferences
+            # fix are legacy residue (stuck forever, harmless) - ignore them.
+            echo "$suites" | jq -r --arg sha "$sha" --argjson now "$now" '
+              .check_suites[]
+              | select(.app.slug != "github-actions")
+              | select(.status != "completed")
+              | select((.created_at | fromdateiso8601) > 1781035200)
+              | select((($now - (.created_at | fromdateiso8601))) > 1800)
+              | "STUCK: commit \($sha[0:8]) app=\(.app.name) (app_id=\(.app.id)) status=\(.status) since \(.created_at)"
+            ' | tee -a stuck.txt
+          done
+          if [ -s stuck.txt ]; then
+            echo "::error::Phantom check suite(s) detected - Railway Wait-for-CI will stall again."
+            echo "::error::Fix: run fix-railway-checksuite.ps1 (disables auto_trigger_checks for the listed app_id)."
+            exit 1
+          fi
+          echo "OK - no stuck non-Actions check suites on the last 5 commits."
