@@ -99,7 +99,6 @@ addEventListener('resize',init);init();if(!R)draw();})();
     </div>
   </div>
 
-  <div class="hint" id="speak-hint" style="margin-top:10px"><label style="font-family:system-ui;cursor:pointer"><input type="checkbox" id="tts" checked> 🔊 Read answers aloud</label></div>
   </div>
 
   <section style="margin-top:26px;font-family:system-ui,sans-serif;text-align:center;color:var(--mut);font-size:13px;line-height:1.7">
@@ -121,8 +120,7 @@ addEventListener('resize',init);init();if(!R)draw();})();
 
 <script>
 const msgs=document.getElementById('msgs'), inp=document.getElementById('inp'),
-      send=document.getElementById('send'), mic=document.getElementById('mic'),
-      tts=document.getElementById('tts');
+      send=document.getElementById('send'), mic=document.getElementById('mic');
 let history=[];
 
 // --- Language (shared with the reader via bv_lang) ---
@@ -148,7 +146,6 @@ function applyLang(){
   document.getElementById('vodLabel').textContent=x.vod;
   document.getElementById('aiIntro').textContent=x.intro;
   inp.placeholder=x.ph; send.textContent=x.send;
-  document.querySelector('#speak-hint label').lastChild.textContent=' '+x.tts;
   document.getElementById('churchLine').firstChild.textContent=x.church+' ';
   const chips=document.querySelectorAll('#chips .chip');
   x.chips.forEach((c,i)=>{ if(chips[i]) chips[i].textContent=c; });
@@ -173,7 +170,9 @@ function add(role,text,verses){
   if(verses&&verses.length&&role==='bot'){ /* references already in text */ }
   msgs.appendChild(d); msgs.scrollTop=msgs.scrollHeight; return d;
 }
-function speak(t){ if(!tts.checked||!window.speechSynthesis)return; const u=new SpeechSynthesisUtterance(t); u.rate=.95; speechSynthesis.cancel(); speechSynthesis.speak(u); }
+// TTS ("read answers aloud") removed 2026-06-12 by owner request — the browser
+// speechSynthesis voice was poor. Voice INPUT (mic) stays; a quality TTS voice
+// can return later as a deliberate feature.
 
 async function sendMsg(text){
   text=(text||inp.value).trim(); if(!text)return;
@@ -185,7 +184,6 @@ async function sendMsg(text){
     wait.textContent=j.reply||'(no reply)';
     if(j.goto){ const a=document.createElement('a'); a.href=`/read?b=${j.goto.bookId}&c=${j.goto.chapter}${LANG==='en'?'':'&l='+LANG}`; a.textContent=t().open.replace('{ref}',j.goto.ref); a.style.cssText='display:inline-block;margin-top:10px;font-family:system-ui,sans-serif;font-size:14px;color:var(--gold);text-decoration:none;border:1px solid var(--gold);border-radius:999px;padding:7px 13px'; wait.appendChild(document.createElement('br')); wait.appendChild(a); msgs.scrollTop=msgs.scrollHeight; }
     history.push({role:'assistant',content:j.reply||''});
-    speak(j.reply||'');
   }catch(e){ wait.textContent=t().err; }
 }
 send.onclick=()=>sendMsg();

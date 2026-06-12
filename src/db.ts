@@ -147,7 +147,7 @@ export async function brainApply(send: { path: string; sha256: string; bytes: nu
 export async function brainGetContent(path: string): Promise<string | null> {
   if (!pool) return null;
   try { const r = await pool.query(`SELECT content FROM brain_chunks WHERE path = $1`, [path]); return r.rows[0]?.content ?? null; }
-  catch { return null; }
+  catch (e: any) { console.warn("[brain] content read failed:", e?.message || e); return null; } // early-return sweep 2026-06-12: name the error, never swallow
 }
 
 export async function brainSetState(version: string, manifest: any): Promise<void> {
@@ -165,7 +165,7 @@ export async function brainGetState(): Promise<{ brainVersion: string | null; up
     const r = await pool.query(`SELECT brain_version, updated_at FROM brain_state WHERE id = 1`);
     if (!r.rows[0]) return { brainVersion: null, updatedAt: null };
     return { brainVersion: r.rows[0].brain_version, updatedAt: r.rows[0].updated_at ? r.rows[0].updated_at.toISOString() : null };
-  } catch { return null; }
+  } catch (e: any) { console.warn("[brain] state read failed:", e?.message || e); return null; }
 }
 
 // --- Outbox delivery tracking (pending state IS the retry mechanism) ---
@@ -191,7 +191,7 @@ export async function outboxAckedIds(member: string): Promise<Set<string>> {
   try {
     const r = await pool.query(`SELECT note_id FROM outbox_delivery WHERE member = $1 AND acked_at IS NOT NULL`, [member]);
     return new Set(r.rows.map((x: any) => x.note_id));
-  } catch { return new Set(); }
+  } catch (e: any) { console.warn("[outbox] acked-ids read failed (treating as none acked — notes may re-deliver):", e?.message || e); return new Set(); }
 }
 
 // --- Living backlog (canonical copy lives in DB; panel at /admin) ---
@@ -203,7 +203,7 @@ export async function getBacklog(): Promise<BacklogRow | null> {
     const r = await pool.query(`SELECT content, updated_at, updated_by FROM admin_backlog WHERE id = 1`);
     if (!r.rows[0]) return null;
     return { content: r.rows[0].content, updatedAt: r.rows[0].updated_at.toISOString(), updatedBy: r.rows[0].updated_by };
-  } catch { return null; }
+  } catch (e: any) { console.warn("[backlog] read failed (a DB outage would otherwise look like db:false):", e?.message || e); return null; }
 }
 
 export async function setBacklog(content: string, updatedBy: string): Promise<BacklogRow | null> {
@@ -234,7 +234,7 @@ export async function getChronicle(): Promise<BacklogRow | null> {
     const r = await pool.query(`SELECT content, updated_at, updated_by FROM admin_chronicle WHERE id = 1`);
     if (!r.rows[0]) return null;
     return { content: r.rows[0].content, updatedAt: r.rows[0].updated_at.toISOString(), updatedBy: r.rows[0].updated_by };
-  } catch { return null; }
+  } catch (e: any) { console.warn("[chronicle] read failed (a DB outage would otherwise look like db:false):", e?.message || e); return null; }
 }
 
 export async function setChronicle(content: string, updatedBy: string): Promise<BacklogRow | null> {
@@ -247,22 +247,32 @@ export async function setChronicle(content: string, updatedBy: string): Promise<
   return getChronicle();
 }
 
+/**
+ * Council membership state. FAIL-CLOSED (sweep 2026-06-12, Kairos's fail-closed principle):
+ * a query ERROR throws instead of returning null — null previously made a transient DB error
+ * indistinguishable from "no secret yet", which would lead ensureCouncil to GENERATE A FRESH
+ * SECRET and silently de-register this member from the hub.
+ */
 export async function getCouncilState(): Promise<{ secret?: string; member_id?: string } | null> {
   if (!pool) return null;
-  try { const r = await pool.query(`SELECT secret, member_id FROM council_state WHERE id = 1`); return r.rows[0] || null; } catch { return null; }
+  try { const r = await pool.query(`SELECT secret, member_id FROM council_state WHERE id = 1`); return r.rows[0] || null; }
+  catch (e: any) { console.error("[council] state read FAILED — fail-closed, not treating as empty:", e?.message || e); throw new Error("council_state_read_failed"); }
 }
 export async function setCouncilSecret(secret: string): Promise<void> {
   if (!pool) return;
-  try { await pool.query(`INSERT INTO council_state(id, secret) VALUES (1, $1) ON CONFLICT (id) DO UPDATE SET secret = EXCLUDED.secret`, [secret]); } catch {}
+  try { await pool.query(`INSERT INTO council_state(id, secret) VALUES (1, $1) ON CONFLICT (id) DO UPDATE SET secret = EXCLUDED.secret`, [secret]); }
+  catch (e: any) { console.error("[council] secret persist FAILED (in-memory secret may not survive restart):", e?.message || e); }
 }
 export async function setCouncilRegistered(memberId: string): Promise<void> {
   if (!pool) return;
-  try { await pool.query(`UPDATE council_state SET member_id = $1, registered_at = now() WHERE id = 1`, [memberId]); } catch {}
+  try { await pool.query(`UPDATE council_state SET member_id = $1, registered_at = now() WHERE id = 1`, [memberId]); }
+  catch (e: any) { console.error("[council] registration persist FAILED (member_id not stored):", e?.message || e); }
 }
 /** Forget a stale hub registration (e.g. after the hub was rebuilt) so a fresh join can run. */
 export async function clearCouncilRegistration(): Promise<void> {
   if (!pool) return;
-  try { await pool.query(`UPDATE council_state SET member_id = NULL, registered_at = NULL WHERE id = 1`); } catch {}
+  try { await pool.query(`UPDATE council_state SET member_id = NULL, registered_at = NULL WHERE id = 1`); }
+  catch (e: any) { console.error("[council] registration clear FAILED (stale member_id may block re-join):", e?.message || e); }
 }
 
 // AI usage safety limits (tunable via env). Protects the shared credit pool.

@@ -79,8 +79,55 @@ export function pickLang(raw?: string): Lang {
   const l = String(raw || "").toLowerCase().slice(0, 2);
   return (LANGS as string[]).includes(l) ? (l as Lang) : "en";
 }
+const missingLangWarned = new Set<string>();
 function setOf(lang: Lang = "en"): CanonSet {
-  return sets.get(lang) || sets.get("en")!;
+  const s = sets.get(lang);
+  if (s) return s;
+  // Early-return sweep 2026-06-12: serving English for a missing language set is a deliberate
+  // graceful fallback, but it must be visible — a whole language silently disappearing from
+  // the site is the same failure class as the silent canon loss caught at meeting #2.
+  if (lang !== "en" && !missingLangWarned.has(lang)) {
+    missingLangWarned.add(lang);
+    console.warn(`[canon] no canon set loaded for lang="${lang}" — falling back to English (warned once)`);
+  }
+  return sets.get("en")!;
+}
+
+/**
+ * Lookup failure reason codes v1 (council meeting #3 homework, adopted 2026-06-12).
+ * STABLE CONTRACT: Arke's edge probes wire against these exact strings — never rename
+ * or remove a code without a version bump announced to the council.
+ *  - ref_parse_fail:      the reference itself is malformed (bad chapter number, unparseable ref)
+ *  - book_not_in_corpus:  the book name/id parsed but is not in this language's loaded canon
+ *  - range_invalid:       book exists but the chapter is out of range, or verseEnd < verseStart
+ *  - verse_not_found:     book + chapter valid but the requested verse range matched nothing
+ */
+export const LOOKUP_FAIL_REASONS = ["verse_not_found", "ref_parse_fail", "book_not_in_corpus", "range_invalid"] as const;
+export type LookupFailReason = (typeof LOOKUP_FAIL_REASONS)[number];
+export type LookupFail = { ok: false; reason: LookupFailReason };
+
+/** Structured chapter lookup: same data as getChapter, with a machine-readable failure reason. */
+export function resolveChapter(bookId: string, chapter: number, lang: Lang = "en"):
+  | { ok: true; chapter: NonNullable<ReturnType<typeof getChapter>> }
+  | LookupFail {
+  if (!Number.isInteger(chapter) || chapter < 1) return { ok: false, reason: "ref_parse_fail" };
+  const b = setOf(lang).books.get(String(bookId || "").toUpperCase());
+  if (!b) return { ok: false, reason: "book_not_in_corpus" };
+  const c = getChapter(b.id, chapter, lang);
+  if (!c) return { ok: false, reason: "range_invalid" };
+  return { ok: true, chapter: c };
+}
+
+/** Structured verse-range lookup (chat grounding + probes): reasons instead of a bare []. */
+export function resolveVerses(bookId: string, chapter: number, start?: number, end?: number, lang: Lang = "en"):
+  | { ok: true; verses: SearchHit[] }
+  | LookupFail {
+  if (start !== undefined && end !== undefined && end < start) return { ok: false, reason: "range_invalid" };
+  const ch = resolveChapter(bookId, chapter, lang);
+  if (!ch.ok) return ch;
+  const verses = getVerses(bookId, chapter, start, end, lang);
+  if (!verses.length) return { ok: false, reason: "verse_not_found" };
+  return { ok: true, verses };
 }
 
 export function getIndex(lang: Lang = "en") { return setOf(lang).index; }
@@ -97,8 +144,11 @@ export function getChapter(bookId: string, chapter: number, lang: Lang = "en") {
 export function parseReference(q: string, lang: Lang = "en") {
   const m = q.trim().match(/^([1-3]?\s?[a-zà-ÿ .]+?)\s+(\d+)(?::(\d+)(?:-(\d+))?)?$/i);
   if (!m) return null;
-  const id = setOf(lang).nameToId.get(m[1].toLowerCase().replace(/\s+/g, " ").trim());
-  if (!id) return null;
+  const name = m[1].toLowerCase().replace(/\s+/g, " ").trim();
+  const id = setOf(lang).nameToId.get(name);
+  // Reference-SHAPED input whose book name isn't in the corpus: callers degrade to keyword
+  // search, so name the miss (book_not_in_corpus class — the 66-vs-82 coverage-gap signal).
+  if (!id) { console.warn(`[canon] parseReference: "${name}" looks like a book ref but is not in the ${lang} corpus (book_not_in_corpus)`); return null; }
   return { bookId: id, chapter: +m[2], verseStart: m[3] ? +m[3] : undefined, verseEnd: m[4] ? +m[4] : (m[3] ? +m[3] : undefined) };
 }
 
@@ -152,6 +202,8 @@ export function verseOfTheDay(date = new Date(), lang: Lang = "en"): SearchHit |
   const day = Math.floor((Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())) / 86400000);
   const ref = VOD[day % VOD.length];
   const p = parseReference(ref); // curated refs are English; book IDs are shared across sets
-  if (!p) return null;
-  return getVerses(p.bookId, p.chapter, p.verseStart, p.verseEnd, lang)[0] || null;
+  if (!p) { console.error(`[canon] verseOfTheDay: curated ref "${ref}" failed to parse — VOD list has a data bug`); return null; }
+  const v = getVerses(p.bookId, p.chapter, p.verseStart, p.verseEnd, lang)[0] || null;
+  if (!v) console.error(`[canon] verseOfTheDay: curated ref "${ref}" resolved to no verses (lang=${lang})`);
+  return v;
 }

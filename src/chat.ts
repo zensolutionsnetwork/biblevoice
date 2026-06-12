@@ -8,7 +8,7 @@
  * verses so the site is usable for demos without burning API credits.
  */
 import Anthropic from "@anthropic-ai/sdk";
-import { search, parseReference, extractReference, getVerses, getBook, type SearchHit, type Lang } from "./canon.js";
+import { search, parseReference, extractReference, resolveVerses, getBook, type SearchHit, type Lang } from "./canon.js";
 
 const CORPUS_LABEL: Record<Lang, string> = {
   en: "Berean Standard Bible; KJV for the Apocrypha/deuterocanon; R.H. Charles for 1 Enoch and Jubilees",
@@ -53,8 +53,11 @@ export interface ChatMessage { role: "user" | "assistant"; content: string; }
 function retrieve(userText: string, lang: Lang = "en"): SearchHit[] {
   const ref = parseReference(userText, lang) || (lang !== "en" ? parseReference(userText) : null); // accept English refs in any language
   if (ref) {
-    const v = getVerses(ref.bookId, ref.chapter, ref.verseStart, ref.verseEnd, lang);
-    if (v.length) return v.slice(0, 12);
+    const v = resolveVerses(ref.bookId, ref.chapter, ref.verseStart, ref.verseEnd, lang);
+    if (v.ok) return v.verses.slice(0, 12);
+    // Lint rule (council 2026-06-11): a parsed ref that resolves to nothing must say why
+    // before we quietly degrade to keyword search (reason codes: council 2026-06-12).
+    console.warn(`[chat] ref ${ref.bookId} ${ref.chapter}:${ref.verseStart ?? "-"}-${ref.verseEnd ?? "-"} failed lookup (${v.reason}, lang=${lang}) — falling back to keyword search`);
   }
   return search(userText, 8, lang);
 }

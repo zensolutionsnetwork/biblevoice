@@ -8,7 +8,7 @@
 <style>
   :root{ --bg:#f7f1e3; --panel:#ffffff; --panel2:#f2ebd8; --ink:#2d2920; --mut:#8a7f62; --gold:#b3852a; --line:#e8dfc8; --side:286px; }
   *{box-sizing:border-box}
-  body{margin:0;font-family:Georgia,'Times New Roman',serif;background:radial-gradient(150% 120% at 50% 2%, #fffaf0 0%, #f6eccf 50%, #ecd9a6 100%);color:var(--ink)}
+  body{margin:0;font-family:Georgia,'Times New Roman',serif;background:radial-gradient(140% 130% at 50% 4%, #fffaf0 0%, #f6eccf 46%, #ead69e 100%);color:var(--ink)}
   a{color:inherit}
   header{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:10px;padding:11px 14px;background:#fbf5e8;border-bottom:1px solid var(--line)}
   header .brand{font-size:18px;text-decoration:none}.brand b{color:var(--gold)}
@@ -57,17 +57,17 @@
 <canvas id="bg"></canvas><div id="glow"></div><div id="rays"></div>
 <style>
 #bg{position:fixed;inset:0;z-index:0;pointer-events:none}
-#glow{position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(760px 640px at 50% -5%, rgba(255,248,222,.5), rgba(255,234,176,.26) 32%, rgba(242,206,120,.1) 52%, transparent 64%);animation:bvpulse 8s ease-in-out infinite}
-#rays{position:fixed;left:50%;top:0;width:215vmax;height:215vmax;transform:translate(-50%,-50%);z-index:0;pointer-events:none;background:repeating-conic-gradient(from 0deg at 50% 50%, rgba(216,170,78,0) 0deg, rgba(216,170,78,0) 2.5deg, rgba(216,170,78,.09) 3.5deg, rgba(216,170,78,0) 4.6deg, rgba(216,170,78,0) 7.5deg);-webkit-mask-image:radial-gradient(closest-side, #000 0%, rgba(0,0,0,.8) 14%, rgba(0,0,0,.3) 42%, transparent 68%);mask-image:radial-gradient(closest-side, #000 0%, rgba(0,0,0,.8) 14%, rgba(0,0,0,.3) 42%, transparent 68%);animation:rayspin 150s linear infinite}
-@keyframes bvpulse{0%,100%{opacity:.8;transform:scale(1)}50%{opacity:.95;transform:scale(1.03)}}
+#glow{position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(760px 640px at 50% -4%, rgba(255,248,222,.6), rgba(255,234,176,.32) 32%, rgba(242,206,120,.13) 52%, transparent 64%);animation:bvpulse 7s ease-in-out infinite}
+#rays{position:fixed;left:50%;top:2%;width:215vmax;height:215vmax;transform:translate(-50%,-50%);z-index:0;pointer-events:none;background:repeating-conic-gradient(from 0deg at 50% 50%, rgba(216,170,78,0) 0deg, rgba(216,170,78,0) 2.3deg, rgba(216,170,78,.18) 3.4deg, rgba(216,170,78,0) 4.5deg, rgba(216,170,78,0) 7deg);-webkit-mask-image:radial-gradient(closest-side, #000 0%, rgba(0,0,0,.9) 15%, rgba(0,0,0,.4) 44%, transparent 70%);mask-image:radial-gradient(closest-side, #000 0%, rgba(0,0,0,.9) 15%, rgba(0,0,0,.4) 44%, transparent 70%);animation:rayspin 120s linear infinite}
+@keyframes bvpulse{0%,100%{opacity:.86;transform:scale(1)}50%{opacity:1;transform:scale(1.035)}}
 @keyframes rayspin{to{transform:translate(-50%,-50%) rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){#glow{animation:none}#rays{animation:none}}
 </style>
 <script>
 (function(){var c=document.getElementById('bg'),x=c.getContext('2d'),w,h,P=[];var R=matchMedia('(prefers-reduced-motion:reduce)').matches;
-function mk(){return{x:Math.random()*w,y:h+Math.random()*h,r:Math.random()*1.4+0.4,s:Math.random()*0.18+0.04,a:Math.random()*0.22+0.05,t:Math.random()*1000}}
-function init(){w=c.width=innerWidth;h=c.height=innerHeight;P=Array.from({length:Math.max(12,Math.min(34,Math.floor(w/40)))},mk)}
-function draw(){x.clearRect(0,0,w,h);for(var i=0;i<P.length;i++){var p=P[i];p.y-=p.s;p.x+=Math.sin((p.y+p.t)/140)*0.1;if(p.y<-12){p=mk();p.y=h+12;P[i]=p;}var g=x.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*5);g.addColorStop(0,'rgba(208,160,70,'+p.a+')');g.addColorStop(1,'rgba(208,160,70,0)');x.fillStyle=g;x.beginPath();x.arc(p.x,p.y,p.r*5,0,6.283);x.fill();}requestAnimationFrame(draw);}
+function mk(){return{x:Math.random()*w,y:h+Math.random()*h,r:Math.random()*1.6+0.5,s:Math.random()*0.22+0.05,a:Math.random()*0.34+0.08,t:Math.random()*1000}}
+function init(){w=c.width=innerWidth;h=c.height=innerHeight;P=Array.from({length:Math.max(16,Math.min(48,Math.floor(w/28)))},mk)}
+function draw(){x.clearRect(0,0,w,h);for(var i=0;i<P.length;i++){var p=P[i];p.y-=p.s;p.x+=Math.sin((p.y+p.t)/130)*0.12;if(p.y<-12){p=mk();p.y=h+12;P[i]=p;}var g=x.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*5);g.addColorStop(0,'rgba(208,160,70,'+p.a+')');g.addColorStop(1,'rgba(208,160,70,0)');x.fillStyle=g;x.beginPath();x.arc(p.x,p.y,p.r*5,0,6.283);x.fill();}requestAnimationFrame(draw);}
 addEventListener('resize',init);init();if(!R)draw();})();
 </script>
 <header>

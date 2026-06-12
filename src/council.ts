@@ -47,12 +47,18 @@ export async function ensureCouncil(): Promise<void> {
   if (!councilEnabled()) { console.log("[council] disabled (set COUNCIL_ENABLED=true to join)"); return; }
   if (process.env.BRIDGE_SECRET) SECRET = process.env.BRIDGE_SECRET;
   else {
-    const st = await getCouncilState();
+    // FAIL-CLOSED (sweep 2026-06-12): if the state READ errors (vs. cleanly empty), abort —
+    // generating a fresh secret on a transient DB error would silently de-register us from the hub.
+    let st;
+    try { st = await getCouncilState(); }
+    catch (e: any) { console.error("[council] aborting ensureCouncil — cannot read state, refusing to regenerate secret:", e?.message || e); return; }
     if (st?.secret) SECRET = st.secret;
     else { SECRET = crypto.randomBytes(32).toString("hex"); await setCouncilSecret(SECRET); }
   }
   const token = process.env.COUNCIL_JOIN_TOKEN;
-  const st = await getCouncilState();
+  let st;
+  try { st = await getCouncilState(); }
+  catch (e: any) { console.error("[council] aborting registration check — state read failed:", e?.message || e); return; }
   if (token && !st?.member_id) {
     try {
       const res = await fetch(HUB + "/api/council/register", {

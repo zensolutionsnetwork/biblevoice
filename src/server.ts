@@ -3,7 +3,7 @@ import crypto from "node:crypto";
 import express from "express";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { getIndex, getChapter, search, verseOfTheDay, pickLang } from "./canon.js";
+import { getIndex, resolveChapter, search, verseOfTheDay, pickLang } from "./canon.js";
 import { chat, type ChatMessage } from "./chat.js";
 import { readFileSync } from "node:fs";
 import { initDb, recordVisit, aiGate, recordAiCall, getBacklog, setBacklog, seedBacklogIfEmpty, getChronicle, setChronicle, outboxMarkPending, outboxAck, outboxAckedIds, brainChunkList, brainApply, brainSetState, brainGetState, recentBoots } from "./db.js";
@@ -69,9 +69,14 @@ app.get("/api/random", (req, res) => {
 });
 
 app.get("/api/bible/:book/:chapter", (req, res) => {
-  const c = getChapter(req.params.book, Number(req.params.chapter), pickLang(String(req.query.lang || "")));
-  if (!c) return res.status(404).json({ error: "Not found" });
-  res.json(c);
+  const r = resolveChapter(req.params.book, Number(req.params.chapter), pickLang(String(req.query.lang || "")));
+  if (!r.ok) {
+    // Reason-code contract v1 (council 2026-06-12): stable machine-readable `reason`
+    // (Arke's edge probes wire against it); `error` kept for old clients.
+    const status = r.reason === "ref_parse_fail" ? 400 : 404;
+    return res.status(status).json({ ok: false, error: "Not found", reason: r.reason });
+  }
+  res.json(r.chapter);
 });
 
 app.get("/api/search", (req, res) => {
